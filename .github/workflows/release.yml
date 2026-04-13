@@ -114,11 +114,3 @@ jobs:
         id: deploy
         uses: actions/deploy-pages@v4
 
-  typedoc:
-    name: TypeDoc Action
-    needs: docs
-    runs-on: ubuntu-latest
-    steps:
-      - uses: ElJijuna/typedoc-action@v1
-        with:
-          token: ${{ secrets.MONITORING_TOOL_DB }}
