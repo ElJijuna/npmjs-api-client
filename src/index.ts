@@ -3,6 +3,8 @@ export { NpmApiError } from './errors/NpmApiError';
 export type { NpmClientOptions, RequestEvent, NpmClientEvents } from './NpmClient';
 export { PackageResource } from './resources/PackageResource';
 export { VersionResource } from './resources/VersionResource';
+export { MaintainerResource } from './resources/MaintainerResource';
+export type { MaintainerPackagesParams } from './resources/MaintainerResource';
 export type { NpmPackument, NpmPerson, NpmRepository } from './domain/Packument';
 export type { NpmPackageVersion, NpmDist } from './domain/PackageVersion';
 export type { NpmDistTags } from './domain/DistTag';

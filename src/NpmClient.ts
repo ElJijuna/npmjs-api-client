@@ -1,5 +1,6 @@
 import { NpmApiError } from './errors/NpmApiError';
 import { PackageResource } from './resources/PackageResource';
+import { MaintainerResource } from './resources/MaintainerResource';
 import type { NpmSearchResult, NpmSearchParams } from './domain/Search';
 import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod } from './domain/Downloads';
 
@@ -77,6 +78,9 @@ export interface NpmClientOptions {
  *
  * // Get download stats
  * const stats = await npm.package('react').downloads('last-week');
+ *
+ * // Get all packages by a maintainer
+ * const result = await npm.maintainer('sindresorhus').packages();
  * ```
  */
 export class NpmClient {
@@ -226,6 +230,33 @@ export class NpmClient {
     return this.request<NpmSearchResult>(
       '/-/v1/search',
       params as unknown as Record<string, string | number | boolean>,
+    );
+  }
+
+  /**
+   * Returns a {@link MaintainerResource} for a given npm username, providing
+   * access to all packages they maintain.
+   *
+   * `GET /-/v1/search?text=maintainer:{username}`
+   *
+   * @param username - The npm username (e.g. `'sindresorhus'`, `'pilmee'`)
+   * @returns A maintainer resource with a `packages()` method
+   *
+   * @example
+   * ```typescript
+   * const result = await npm.maintainer('sindresorhus').packages();
+   * console.log(`${result.total} packages`);
+   * result.objects.forEach(o => console.log(o.package.name, o.package.version));
+   *
+   * // Paginate
+   * const page2 = await npm.maintainer('sindresorhus').packages({ size: 25, from: 25 });
+   * ```
+   */
+  maintainer(username: string): MaintainerResource {
+    return new MaintainerResource(
+      <T>(path: string, params?: Record<string, string | number | boolean>) =>
+        this.request<T>(path, params),
+      username,
     );
   }
 

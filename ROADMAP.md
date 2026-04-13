@@ -11,6 +11,7 @@
 | Method | Endpoint | Status |
 |--------|----------|--------|
 | `package(name)` | — chainable | ✅ |
+| `maintainer(username)` | — chainable | ✅ |
 | `search(params)` | `GET /-/v1/search` | ✅ |
 | `downloads(period, package)` | `GET /downloads/point/{period}/{package}` | ✅ |
 | `downloadRange(period, package)` | `GET /downloads/range/{period}/{package}` | ✅ |
@@ -41,6 +42,14 @@
 | Method | Endpoint | Status |
 |--------|----------|--------|
 | `get()` | `GET /{name}/{version}` | ✅ |
+
+---
+
+## MaintainerResource
+
+| Method | Endpoint | Status |
+|--------|----------|--------|
+| `packages(params?)` | `GET /-/v1/search?text=maintainer:{username}` | ✅ |
 
 ---
 
