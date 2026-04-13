@@ -50,6 +50,53 @@ describe('MaintainerResource', () => {
     });
   });
 
+  describe('info()', () => {
+    it('extracts publisher profile from search result', async () => {
+      mockResponse({
+        ...mockSearchResult,
+        objects: [{
+          ...mockSearchResult.objects[0],
+          package: {
+            ...mockSearchResult.objects[0].package,
+            publisher: { username: 'pilmee', email: 'pilmee@gmail.com' },
+          },
+        }],
+      });
+      const profile = await npm.maintainer('pilmee').info();
+      expect(profile.name).toBe('pilmee');
+      expect(profile.email).toBe('pilmee@gmail.com');
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/-/v1/search?'),
+        expect.any(Object),
+      );
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain('text=maintainer%3Apilmee');
+      expect(url).toContain('size=1');
+    });
+
+    it('falls back to username when no results', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      const profile = await npm.maintainer('ghost').info();
+      expect(profile.name).toBe('ghost');
+      expect(profile.email).toBeUndefined();
+    });
+
+    it('returns email as undefined when publisher has none', async () => {
+      mockResponse({
+        ...mockSearchResult,
+        objects: [{
+          ...mockSearchResult.objects[0],
+          package: {
+            ...mockSearchResult.objects[0].package,
+            publisher: { username: 'pilmee' },
+          },
+        }],
+      });
+      const profile = await npm.maintainer('pilmee').info();
+      expect(profile.email).toBeUndefined();
+    });
+  });
+
   describe('packages()', () => {
     it('calls the search endpoint with maintainer query', async () => {
       mockResponse(mockSearchResult);

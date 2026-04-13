@@ -49,6 +49,7 @@
 
 | Method | Endpoint | Status |
 |--------|----------|--------|
+| `info()` | `GET /-/user/org.couchdb.user:{username}` | ✅ |
 | `packages(params?)` | `GET /-/v1/search?text=maintainer:{username}` | ✅ |
 
 ---

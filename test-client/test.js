@@ -31,6 +31,10 @@ async function test() {
   console.log('Search results:');
   results.objects.forEach(o => console.log(' -', o.package.name, o.package.version));
 
+  // Maintainer
+  const maintainer = await npm.maintainer('pilmee').info();
+  console.log('Maintainer pilmee:', maintainer);  
+
   // Maintainer packages
   const maintained = await npm.maintainer('pilmee').packages({ size: 7 });
   console.log(`Maintainer pilmee — ${maintained.total} packages:`);
