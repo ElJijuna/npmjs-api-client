@@ -1,12 +1,6 @@
 import type { NpmSearchResult, NpmSearchObject } from '../domain/Search';
 import type { NpmUser } from '../domain/NpmUser';
-
-/** @internal */
-export type RequestFn = <T>(
-  path: string,
-  params?: Record<string, string | number | boolean>,
-  baseUrl?: string,
-) => Promise<T>;
+import type { RequestFn } from './types';
 
 /**
  * Pagination and scoring options for {@link MaintainerResource.packages}.
@@ -58,6 +52,7 @@ export class MaintainerResource {
    *
    * `GET /-/v1/search?text=maintainer:{username}&size=1`
    *
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns The user profile with `name` and optional `email`
    * @throws {NpmApiError} If the user has no published packages (404-equivalent: no results)
    *
@@ -68,10 +63,12 @@ export class MaintainerResource {
    * console.log(profile.email); // 'pilmee@gmail.com'
    * ```
    */
-  async info(): Promise<NpmUser> {
+  async info(signal?: AbortSignal): Promise<NpmUser> {
     const result = await this.request<NpmSearchResult>(
       '/-/v1/search',
       { text: `maintainer:${this.username}`, size: 1 },
+      undefined,
+      signal,
     );
     const first: NpmSearchObject | undefined = result.objects[0];
     const publisher = first?.package.publisher;
@@ -88,6 +85,7 @@ export class MaintainerResource {
    * `GET /-/v1/search?text=maintainer:{username}`
    *
    * @param params - Optional pagination and scoring weights
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Search results with packages, scores, and total count
    *
    * @example
@@ -99,7 +97,7 @@ export class MaintainerResource {
    * });
    * ```
    */
-  async packages(params: MaintainerPackagesParams = {}): Promise<NpmSearchResult> {
+  async packages(params: MaintainerPackagesParams = {}, signal?: AbortSignal): Promise<NpmSearchResult> {
     return this.request<NpmSearchResult>(
       '/-/v1/search',
       {
@@ -110,6 +108,8 @@ export class MaintainerResource {
         ...(params.popularity !== undefined && { popularity: params.popularity }),
         ...(params.maintenance !== undefined && { maintenance: params.maintenance }),
       },
+      undefined,
+      signal,
     );
   }
 }

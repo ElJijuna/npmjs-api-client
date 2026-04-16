@@ -152,6 +152,51 @@ describe('NpmClient', () => {
     });
   });
 
+  describe('AbortSignal', () => {
+    it('passes signal to fetch on search()', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      const controller = new AbortController();
+      await npm.search({ text: 'react' }, controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('passes signal to fetch on downloads()', async () => {
+      mockResponse({ downloads: 1000, start: '2024-01-01', end: '2024-01-31', package: 'react' });
+      const controller = new AbortController();
+      await npm.downloads('last-week', 'react', controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('passes signal to fetch on downloadRange()', async () => {
+      mockResponse({ downloads: [], start: '2024-01-01', end: '2024-01-31', package: 'react' });
+      const controller = new AbortController();
+      await npm.downloadRange('last-month', 'react', controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('propagates AbortError and still emits request event', async () => {
+      const abortError = new DOMException('The operation was aborted.', 'AbortError');
+      mockFetch.mockRejectedValueOnce(abortError);
+      const controller = new AbortController();
+      const events: unknown[] = [];
+      npm.on('request', (e) => events.push(e));
+      await expect(npm.search({ text: 'react' }, controller.signal)).rejects.toThrow('The operation was aborted.');
+      expect(events).toHaveLength(1);
+      const event = events[0] as { error: Error };
+      expect(event.error).toBeInstanceOf(Error);
+      expect(event.error.message).toContain('The operation was aborted.');
+    });
+  });
+
   describe('authorization header', () => {
     it('does not send Authorization header when no token', async () => {
       mockResponse({ name: 'react', 'dist-tags': {}, versions: {}, time: {} });

@@ -145,19 +145,21 @@ export class NpmClient {
    * @param path - Path to append to the base URL
    * @param params - Optional query parameters
    * @param baseUrl - Which base URL to use: `'registry'` (default) or `'downloads'`
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @internal
    */
   private async request<T>(
     path: string,
     params?: Record<string, string | number | boolean>,
     baseUrl: 'registry' | 'downloads' = 'registry',
+    signal?: AbortSignal,
   ): Promise<T> {
     const base = baseUrl === 'downloads' ? this.downloadsApiUrl : this.registryUrl;
     const url = buildUrl(`${base}${path}`, params);
     const startedAt = new Date();
     let statusCode: number | undefined;
     try {
-      const response = await fetch(url, { headers: this.buildHeaders() });
+      const response = await fetch(url, { headers: this.buildHeaders(), signal });
       statusCode = response.status;
       if (!response.ok) {
         throw new NpmApiError(response.status, response.statusText);
@@ -206,8 +208,8 @@ export class NpmClient {
    */
   package(name: string): PackageResource {
     return new PackageResource(
-      <T>(path: string, params?: Record<string, string | number | boolean>, baseUrl?: string) =>
-        this.request<T>(path, params, (baseUrl as 'registry' | 'downloads') ?? 'registry'),
+      <T>(path: string, params?: Record<string, string | number | boolean>, baseUrl?: string, signal?: AbortSignal) =>
+        this.request<T>(path, params, (baseUrl as 'registry' | 'downloads') ?? 'registry', signal),
       name,
     );
   }
@@ -218,6 +220,7 @@ export class NpmClient {
    * `GET /-/v1/search`
    *
    * @param params - Search parameters (required: `text`)
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Search results including packages, scores, and total count
    *
    * @example
@@ -226,10 +229,12 @@ export class NpmClient {
    * results.objects.forEach(o => console.log(o.package.name, o.package.version));
    * ```
    */
-  async search(params: NpmSearchParams): Promise<NpmSearchResult> {
+  async search(params: NpmSearchParams, signal?: AbortSignal): Promise<NpmSearchResult> {
     return this.request<NpmSearchResult>(
       '/-/v1/search',
       params as unknown as Record<string, string | number | boolean>,
+      'registry',
+      signal,
     );
   }
 
@@ -254,8 +259,8 @@ export class NpmClient {
    */
   maintainer(username: string): MaintainerResource {
     return new MaintainerResource(
-      <T>(path: string, params?: Record<string, string | number | boolean>) =>
-        this.request<T>(path, params),
+      <T>(path: string, params?: Record<string, string | number | boolean>, _baseUrl?: string, signal?: AbortSignal) =>
+        this.request<T>(path, params, 'registry', signal),
       username,
     );
   }
@@ -269,6 +274,7 @@ export class NpmClient {
    *
    * @param period - Named period or date range
    * @param packageName - The package name
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Download point data including total count and date range
    *
    * @example
@@ -280,11 +286,13 @@ export class NpmClient {
   async downloads(
     period: NpmDownloadPeriod,
     packageName: string,
+    signal?: AbortSignal,
   ): Promise<NpmDownloadPoint> {
     return this.request<NpmDownloadPoint>(
       `/downloads/point/${period}/${encodeURIComponent(packageName)}`,
       undefined,
       'downloads',
+      signal,
     );
   }
 
@@ -297,6 +305,7 @@ export class NpmClient {
    *
    * @param period - Named period or date range
    * @param packageName - The package name
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Download range data with a per-day array
    *
    * @example
@@ -308,11 +317,13 @@ export class NpmClient {
   async downloadRange(
     period: NpmDownloadPeriod,
     packageName: string,
+    signal?: AbortSignal,
   ): Promise<NpmDownloadRange> {
     return this.request<NpmDownloadRange>(
       `/downloads/range/${period}/${encodeURIComponent(packageName)}`,
       undefined,
       'downloads',
+      signal,
     );
   }
 }

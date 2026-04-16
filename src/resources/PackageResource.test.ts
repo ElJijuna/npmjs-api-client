@@ -212,6 +212,58 @@ describe('PackageResource', () => {
     });
   });
 
+  describe('AbortSignal', () => {
+    it('passes signal to fetch on get()', async () => {
+      mockResponse({ name: 'react', 'dist-tags': {}, versions: {}, time: {} });
+      const controller = new AbortController();
+      await npm.package('react').get(controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('passes signal to fetch on distTags()', async () => {
+      mockResponse({ latest: '18.2.0' });
+      const controller = new AbortController();
+      await npm.package('react').distTags(controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('passes signal to fetch on downloads()', async () => {
+      mockResponse({ downloads: 1000, start: '2024-01-01', end: '2024-01-31', package: 'react' });
+      const controller = new AbortController();
+      await npm.package('react').downloads('last-week', controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('passes signal to fetch on downloadRange()', async () => {
+      mockResponse({ downloads: [], start: '2024-01-01', end: '2024-01-31', package: 'react' });
+      const controller = new AbortController();
+      await npm.package('react').downloadRange('last-month', controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('passes signal to fetch on version().get()', async () => {
+      mockResponse({ name: 'react', version: '18.2.0', dist: { tarball: '', shasum: '' } });
+      const controller = new AbortController();
+      await npm.package('react').version('18.2.0').get(controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+  });
+
   describe('PromiseLike behaviour', () => {
     it('PackageResource is a thenable', () => {
       const pkg = npm.package('react');

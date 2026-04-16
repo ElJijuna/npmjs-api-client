@@ -12,9 +12,10 @@
 |--------|----------|--------|
 | `package(name)` | — chainable | ✅ |
 | `maintainer(username)` | — chainable | ✅ |
-| `search(params)` | `GET /-/v1/search` | ✅ |
-| `downloads(period, package)` | `GET /downloads/point/{period}/{package}` | ✅ |
-| `downloadRange(period, package)` | `GET /downloads/range/{period}/{package}` | ✅ |
+| `search(params, signal?)` | `GET /-/v1/search` | ✅ |
+| `downloads(period, package, signal?)` | `GET /downloads/point/{period}/{package}` | ✅ |
+| `downloadRange(period, package, signal?)` | `GET /downloads/range/{period}/{package}` | ✅ |
+| AbortSignal support on all methods | — | ✅ |
 
 ---
 
@@ -22,14 +23,14 @@
 
 | Method | Endpoint | Status |
 |--------|----------|--------|
-| `get()` | `GET /{name}` | ✅ |
+| `get(signal?)` | `GET /{name}` | ✅ |
 | `version(ver)` | — chainable | ✅ |
 | `latest()` | — chainable (shorthand for `version('latest')`) | ✅ |
-| `versions()` | `GET /{name}` (extraído del packument) | ✅ |
-| `maintainers()` | `GET /{name}` (extraído del packument) | ✅ |
-| `distTags()` | `GET /-/package/{name}/dist-tags` | ✅ |
-| `downloads(period?)` | `GET /downloads/point/{period}/{name}` | ✅ |
-| `downloadRange(period?)` | `GET /downloads/range/{period}/{name}` | ✅ |
+| `versions(signal?)` | `GET /{name}` (extraído del packument) | ✅ |
+| `maintainers(signal?)` | `GET /{name}` (extraído del packument) | ✅ |
+| `distTags(signal?)` | `GET /-/package/{name}/dist-tags` | ✅ |
+| `downloads(period?, signal?)` | `GET /downloads/point/{period}/{name}` | ✅ |
+| `downloadRange(period?, signal?)` | `GET /downloads/range/{period}/{name}` | ✅ |
 | `addDistTag(tag, version)` | `PUT /-/package/{name}/dist-tags/{tag}` | ⬜ |
 | `removeDistTag(tag)` | `DELETE /-/package/{name}/dist-tags/{tag}` | ⬜ |
 | `deprecate(version, message)` | `PUT /{name}` (deprecation) | ⬜ |
@@ -41,7 +42,7 @@
 
 | Method | Endpoint | Status |
 |--------|----------|--------|
-| `get()` | `GET /{name}/{version}` | ✅ |
+| `get(signal?)` | `GET /{name}/{version}` | ✅ |
 
 ---
 
@@ -49,8 +50,8 @@
 
 | Method | Endpoint | Status |
 |--------|----------|--------|
-| `info()` | `GET /-/user/org.couchdb.user:{username}` | ✅ |
-| `packages(params?)` | `GET /-/v1/search?text=maintainer:{username}` | ✅ |
+| `info(signal?)` | `GET /-/user/org.couchdb.user:{username}` | ✅ |
+| `packages(params?, signal?)` | `GET /-/v1/search?text=maintainer:{username}` | ✅ |
 
 ---
 

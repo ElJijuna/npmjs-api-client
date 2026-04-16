@@ -1,11 +1,7 @@
 import type { NpmPackageVersion } from '../domain/PackageVersion';
+import type { RequestFn } from './types';
 
-/** @internal */
-export type RequestFn = <T>(
-  path: string,
-  params?: Record<string, string | number | boolean>,
-  baseUrl?: string,
-) => Promise<T>;
+export type { RequestFn };
 
 /**
  * Represents a specific version of an npm package, providing access to its manifest.
@@ -45,11 +41,15 @@ export class VersionResource implements PromiseLike<NpmPackageVersion> {
    *
    * `GET /{package}/{version}`
    *
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns The version manifest object
    */
-  async get(): Promise<NpmPackageVersion> {
+  async get(signal?: AbortSignal): Promise<NpmPackageVersion> {
     return this.request<NpmPackageVersion>(
       `/${encodeURIComponent(this.packageName)}/${encodeURIComponent(this.ver)}`,
+      undefined,
+      undefined,
+      signal,
     );
   }
 }
