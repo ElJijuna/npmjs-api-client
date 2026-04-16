@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.2.0...v1.3.0) (2026-04-16)
+
+
+### Features
+
+* add AbortSignal support to all request methods [#3](https://github.com/ElJijuna/npmjs-api-client/issues/3) ([74903be](https://github.com/ElJijuna/npmjs-api-client/commit/74903be73e0b144df9497c01aeb75b911b96c755))
+
 # [1.2.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.1.0...v1.2.0) (2026-04-13)
 
 
