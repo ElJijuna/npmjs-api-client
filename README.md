@@ -83,6 +83,33 @@ const tags = await npm.package('typescript').distTags();
 // { latest: '6.0.2', beta: '6.0.0-beta', rc: '6.0.1-rc', next: '...' }
 ```
 
+### Cancelling requests
+
+Pass an `AbortSignal` to any method to cancel the in-flight request:
+
+```typescript
+const controller = new AbortController();
+
+// Cancel after 3 seconds
+setTimeout(() => controller.abort(), 3000);
+
+const pkg    = await npm.package('react').get(controller.signal);
+const latest = await npm.package('react').latest().get(controller.signal);
+const tags   = await npm.package('react').distTags(controller.signal);
+const stats  = await npm.package('react').downloads('last-week', controller.signal);
+const range  = await npm.package('react').downloadRange('last-month', controller.signal);
+
+const results = await npm.search({ text: 'react' }, controller.signal);
+
+const info  = await npm.maintainer('sindresorhus').info(controller.signal);
+const pkgs  = await npm.maintainer('sindresorhus').packages({}, controller.signal);
+```
+
+When a request is aborted, `fetch` throws a `DOMException` with `name === 'AbortError'`.
+The `request` event is still emitted with the error attached.
+
+---
+
 ### Search
 
 ```typescript

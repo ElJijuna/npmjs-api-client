@@ -149,4 +149,26 @@ describe('MaintainerResource', () => {
       expect(result.objects).toHaveLength(0);
     });
   });
+
+  describe('AbortSignal', () => {
+    it('passes signal to fetch on info()', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      const controller = new AbortController();
+      await npm.maintainer('pilmee').info(controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('passes signal to fetch on packages()', async () => {
+      mockResponse(mockSearchResult);
+      const controller = new AbortController();
+      await npm.maintainer('pilmee').packages({}, controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+  });
 });

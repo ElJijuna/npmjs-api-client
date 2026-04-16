@@ -52,10 +52,11 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    *
    * `GET /{name}`
    *
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns The full packument object
    */
-  async get(): Promise<NpmPackument> {
-    return this.request<NpmPackument>(`/${encodeURIComponent(this.name)}`);
+  async get(signal?: AbortSignal): Promise<NpmPackument> {
+    return this.request<NpmPackument>(`/${encodeURIComponent(this.name)}`, undefined, undefined, signal);
   }
 
   /**
@@ -91,19 +92,6 @@ export class PackageResource implements PromiseLike<NpmPackument> {
   }
 
   /**
-   * Fetches all dist-tags for this package.
-   *
-   * `GET /-/package/{name}/dist-tags`
-   *
-   * @returns A map of tag names to version strings
-   *
-   * @example
-   * ```typescript
-   * const tags = await npm.package('react').distTags();
-   * // { latest: '18.2.0', next: '19.0.0-beta.1' }
-   * ```
-   */
-  /**
    * Fetches all published versions of this package as an ordered array.
    *
    * Internally fetches the packument and converts the `versions` map to an array
@@ -111,6 +99,7 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    *
    * `GET /{name}`
    *
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Array of version manifests sorted by publication order
    *
    * @example
@@ -119,8 +108,8 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * console.log(versions.map(v => v.version).join(', '));
    * ```
    */
-  async versions(): Promise<NpmPackageVersion[]> {
-    const packument = await this.get();
+  async versions(signal?: AbortSignal): Promise<NpmPackageVersion[]> {
+    const packument = await this.get(signal);
     return Object.values(packument.versions);
   }
 
@@ -131,6 +120,7 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    *
    * `GET /{name}`
    *
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Array of maintainer entries (name, email, url)
    *
    * @example
@@ -139,13 +129,27 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * maintainers.forEach(m => console.log(m.name, m.email));
    * ```
    */
-  async maintainers(): Promise<NpmPerson[]> {
-    const packument = await this.get();
+  async maintainers(signal?: AbortSignal): Promise<NpmPerson[]> {
+    const packument = await this.get(signal);
     return packument.maintainers ?? [];
   }
 
-  async distTags(): Promise<NpmDistTags> {
-    return this.request<NpmDistTags>(`/-/package/${encodeURIComponent(this.name)}/dist-tags`);
+  /**
+   * Fetches all dist-tags for this package.
+   *
+   * `GET /-/package/{name}/dist-tags`
+   *
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns A map of tag names to version strings
+   *
+   * @example
+   * ```typescript
+   * const tags = await npm.package('react').distTags();
+   * // { latest: '18.2.0', next: '19.0.0-beta.1' }
+   * ```
+   */
+  async distTags(signal?: AbortSignal): Promise<NpmDistTags> {
+    return this.request<NpmDistTags>(`/-/package/${encodeURIComponent(this.name)}/dist-tags`, undefined, undefined, signal);
   }
 
   /**
@@ -154,6 +158,7 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * `GET /downloads/point/{period}/{name}` (via api.npmjs.org)
    *
    * @param period - Named period or date range (default: `'last-month'`)
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Download point data including total count and date range
    *
    * @example
@@ -162,11 +167,12 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * console.log(stats.downloads); // 12345678
    * ```
    */
-  async downloads(period: NpmDownloadPeriod = 'last-month'): Promise<NpmDownloadPoint> {
+  async downloads(period: NpmDownloadPeriod = 'last-month', signal?: AbortSignal): Promise<NpmDownloadPoint> {
     return this.request<NpmDownloadPoint>(
       `/downloads/point/${period}/${encodeURIComponent(this.name)}`,
       undefined,
       'downloads',
+      signal,
     );
   }
 
@@ -176,6 +182,7 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * `GET /downloads/range/{period}/{name}` (via api.npmjs.org)
    *
    * @param period - Named period or date range (default: `'last-month'`)
+   * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Download range data with a per-day array
    *
    * @example
@@ -184,11 +191,12 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * range.downloads.forEach(d => console.log(d.day, d.downloads));
    * ```
    */
-  async downloadRange(period: NpmDownloadPeriod = 'last-month'): Promise<NpmDownloadRange> {
+  async downloadRange(period: NpmDownloadPeriod = 'last-month', signal?: AbortSignal): Promise<NpmDownloadRange> {
     return this.request<NpmDownloadRange>(
       `/downloads/range/${period}/${encodeURIComponent(this.name)}`,
       undefined,
       'downloads',
+      signal,
     );
   }
 }
