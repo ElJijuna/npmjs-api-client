@@ -84,6 +84,59 @@ describe('PackageResource', () => {
       const result = await npm.package('react').version('18.2.0');
       expect(result.name).toBe('react');
     });
+
+    it('fetches downloads for a specific version', async () => {
+      mockResponse({
+        package: 'react',
+        downloads: {
+          '18.2.0': 12345,
+          '19.0.0': 67890,
+        },
+      });
+      const result = await npm.package('react').version('18.2.0').downloads('last-week');
+      expect(result).toEqual({
+        downloads: 12345,
+        package: 'react',
+        version: '18.2.0',
+        period: 'last-week',
+      });
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.npmjs.org/versions/react/last-week',
+        expect.any(Object),
+      );
+    });
+
+    it('defaults version downloads to last-week', async () => {
+      mockResponse({ package: 'react', downloads: { '18.2.0': 12345 } });
+      const result = await npm.package('react').version('18.2.0').downloads();
+      expect(result.downloads).toBe(12345);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.npmjs.org/versions/react/last-week',
+        expect.any(Object),
+      );
+    });
+
+    it('returns zero when the version has no download entry', async () => {
+      mockResponse({ package: 'react', downloads: { '19.0.0': 67890 } });
+      const result = await npm.package('react').version('18.2.0').downloads();
+      expect(result.downloads).toBe(0);
+    });
+
+    it('throws when version downloads use a period other than last-week', async () => {
+      await expect(
+        npm.package('react').version('18.2.0').downloads('last-month' as 'last-week'),
+      ).rejects.toThrow(RangeError);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('encodes scoped package name in version downloads URL', async () => {
+      mockResponse({ package: '@types/node', downloads: { '20.0.0': 100 } });
+      await npm.package('@types/node').version('20.0.0').downloads();
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.npmjs.org/versions/%40types%2Fnode/last-week',
+        expect.any(Object),
+      );
+    });
   });
 
   describe('latest()', () => {
@@ -257,6 +310,16 @@ describe('PackageResource', () => {
       mockResponse({ name: 'react', version: '18.2.0', dist: { tarball: '', shasum: '' } });
       const controller = new AbortController();
       await npm.package('react').version('18.2.0').get(controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('passes signal to fetch on version().downloads()', async () => {
+      mockResponse({ package: 'react', downloads: { '18.2.0': 1000 } });
+      const controller = new AbortController();
+      await npm.package('react').version('18.2.0').downloads('last-week', controller.signal);
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ signal: controller.signal }),

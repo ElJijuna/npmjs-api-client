@@ -23,4 +23,7 @@ export type {
   NpmDownloadRange,
   NpmDownloadDay,
   NpmDownloadPeriod,
+  NpmVersionDownloadPeriod,
+  NpmVersionDownloadPoint,
+  NpmVersionDownloads,
 } from './domain/Downloads';

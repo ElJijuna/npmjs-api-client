@@ -151,6 +151,10 @@ const range = await npm.package('typescript').downloadRange('2024-01-01:2024-01-
 
 range.downloads.forEach(d => console.log(d.day, d.downloads));
 
+// Version downloads (npm only supports last-week for this endpoint)
+const versionStats = await npm.package('typescript').version('5.4.5').downloads('last-week');
+console.log(versionStats.downloads);
+
 // Convenience methods on the client directly
 const stats = await npm.downloads('last-week', 'typescript');
 const range = await npm.downloadRange('last-month', 'typescript');

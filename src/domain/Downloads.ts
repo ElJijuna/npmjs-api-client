@@ -11,6 +11,13 @@ export type NpmDownloadPeriod =
   | `${string}:${string}`; // custom range: "YYYY-MM-DD:YYYY-MM-DD"
 
 /**
+ * Period accepted by the npm per-version downloads API.
+ *
+ * npm currently exposes version-level download counts only for the previous 7 days.
+ */
+export type NpmVersionDownloadPeriod = 'last-week';
+
+/**
  * Download count for a specific package over a period.
  *
  * Returned by `GET /downloads/point/{period}/{package}`.
@@ -50,4 +57,30 @@ export interface NpmDownloadRange {
   end: string;
   /** Package name */
   package: string;
+}
+
+/**
+ * Download counts for all versions of a package over the previous 7 days.
+ *
+ * Returned by `GET /versions/{package}/last-week`.
+ */
+export interface NpmVersionDownloads {
+  /** Package name */
+  package: string;
+  /** Map of version strings to their download counts */
+  downloads: Record<string, number>;
+}
+
+/**
+ * Download count for a specific package version over the previous 7 days.
+ */
+export interface NpmVersionDownloadPoint {
+  /** Download count for this version */
+  downloads: number;
+  /** Package name */
+  package: string;
+  /** Version string */
+  version: string;
+  /** Period used for the request */
+  period: NpmVersionDownloadPeriod;
 }

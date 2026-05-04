@@ -1,3 +1,4 @@
+import type { NpmVersionDownloadPeriod, NpmVersionDownloadPoint, NpmVersionDownloads } from '../domain/Downloads';
 import type { NpmPackageVersion } from '../domain/PackageVersion';
 import type { RequestFn } from './types';
 
@@ -51,5 +52,45 @@ export class VersionResource implements PromiseLike<NpmPackageVersion> {
       undefined,
       signal,
     );
+  }
+
+  /**
+   * Fetches the download count for this specific version over the previous 7 days.
+   *
+   * npm exposes version-level download counts only for `last-week`.
+   *
+   * `GET /versions/{package}/last-week` (via api.npmjs.org)
+   *
+   * @param period - Must be `'last-week'`
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Download point data for this version
+   *
+   * @example
+   * ```typescript
+   * const stats = await npm.package('react').version('18.2.0').downloads('last-week');
+   * console.log(stats.downloads);
+   * ```
+   */
+  async downloads(
+    period: NpmVersionDownloadPeriod = 'last-week',
+    signal?: AbortSignal,
+  ): Promise<NpmVersionDownloadPoint> {
+    if (period !== 'last-week') {
+      throw new RangeError("Version downloads are only available for 'last-week'.");
+    }
+
+    const stats = await this.request<NpmVersionDownloads>(
+      `/versions/${encodeURIComponent(this.packageName)}/${period}`,
+      undefined,
+      'downloads',
+      signal,
+    );
+
+    return {
+      downloads: stats.downloads[this.ver] ?? 0,
+      package: stats.package,
+      version: this.ver,
+      period,
+    };
   }
 }
