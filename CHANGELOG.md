@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.3.0...v1.4.0) (2026-05-04)
+
+
+### Features
+
+* add version-level download stats ([5952f9b](https://github.com/ElJijuna/npmjs-api-client/commit/5952f9be336860a4b36b52ac0dab1d6a793315a4)), closes [#5](https://github.com/ElJijuna/npmjs-api-client/issues/5)
+
 # [1.3.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.2.0...v1.3.0) (2026-04-16)
 
 
