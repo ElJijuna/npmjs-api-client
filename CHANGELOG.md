@@ -1,3 +1,12 @@
+# [1.5.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.4.0...v1.5.0) (2026-05-06)
+
+
+### Features
+
+* update NpmClient with apis defined and add implementations to use this. ([54cbbac](https://github.com/ElJijuna/npmjs-api-client/commit/54cbbac11d7381476c8408b9a872feb501ce8a52))
+* update PackageResources with package score, size and cdnStats. ([c1d501a](https://github.com/ElJijuna/npmjs-api-client/commit/c1d501a74febb427b729ada9b9978fd027562d0e))
+* update VersionResource with size, files, cdnStats and dependencies. ([e86894e](https://github.com/ElJijuna/npmjs-api-client/commit/e86894ed4d604969ecd9542a416e3e4bc80d33ef))
+
 # [1.4.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.3.0...v1.4.0) (2026-05-04)
 
 
