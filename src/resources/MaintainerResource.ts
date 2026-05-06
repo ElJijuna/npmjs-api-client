@@ -112,4 +112,21 @@ export class MaintainerResource {
       signal,
     );
   }
+
+  /**
+   * Returns the public avatar URL for this npm user.
+   *
+   * No API call is made — the URL is derived from the username.
+   *
+   * @returns Avatar image URL served by npmjs.com
+   *
+   * @example
+   * ```typescript
+   * const url = npm.maintainer('pilmee').avatar();
+   * // 'https://www.npmjs.com/npm-avatar/pilmee'
+   * ```
+   */
+  avatar(): string {
+    return `https://www.npmjs.com/npm-avatar/${this.username}`;
+  }
 }

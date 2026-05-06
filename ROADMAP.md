@@ -76,6 +76,7 @@
 | ------------------------------- | ------------------------------------------------- | ------ |
 | `info(signal?)`                 | `GET /-/user/org.couchdb.user:{username}`         | ✅     |
 | `packages(params?, signal?)`    | `GET /-/v1/search?text=maintainer:{username}`     | ✅     |
+| `avatar()`                      | — derived from username, no request               | ✅     |
 
 ---
 

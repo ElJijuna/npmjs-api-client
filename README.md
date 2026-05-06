@@ -347,6 +347,10 @@ console.log(results.total); // total matches
 const user = await npm.maintainer('sindresorhus').info();
 console.log(user.name, user.email);
 
+// Avatar URL (no API call — derived from username)
+const avatarUrl = npm.maintainer('sindresorhus').avatar();
+// 'https://www.npmjs.com/npm-avatar/sindresorhus'
+
 // All packages maintained (paginated)
 const result = await npm.maintainer('sindresorhus').packages();
 console.log(`${result.total} packages`);
