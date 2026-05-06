@@ -2,6 +2,9 @@ import type { NpmPackument, NpmPerson } from '../domain/Packument';
 import type { NpmDistTags } from '../domain/DistTag';
 import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod } from '../domain/Downloads';
 import type { NpmPackageVersion } from '../domain/PackageVersion';
+import type { NpmsScore } from '../domain/Npms';
+import type { PackagephobiaSize } from '../domain/Packagephobia';
+import type { JsdelivrStats, JsdelivrGroupBy, JsdelivrPeriod } from '../domain/Jsdelivr';
 import { VersionResource, type RequestFn } from './VersionResource';
 
 /**
@@ -196,6 +199,91 @@ export class PackageResource implements PromiseLike<NpmPackument> {
       `/downloads/range/${period}/${encodeURIComponent(this.name)}`,
       undefined,
       'downloads',
+      signal,
+    );
+  }
+
+  /**
+   * Fetches the quality, maintenance, and popularity score for this package from npms.io.
+   *
+   * Returns a detailed breakdown of each score component, including test coverage,
+   * release frequency, community interest, and dependent package count.
+   *
+   * `GET /package/{name}` (via api.npms.io/v2)
+   *
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Detailed score and evaluation data
+   *
+   * @example
+   * ```typescript
+   * const score = await npm.package('react').score();
+   * console.log(score.score.final);                         // 0.97
+   * console.log(score.evaluation.popularity.dependentsCount); // 15000
+   * ```
+   */
+  async score(signal?: AbortSignal): Promise<NpmsScore> {
+    return this.request<NpmsScore>(
+      `/package/${encodeURIComponent(this.name)}`,
+      undefined,
+      'npms',
+      signal,
+    );
+  }
+
+  /**
+   * Fetches the publish size and full install size (including all transitive dependencies)
+   * for the latest version of this package from Packagephobia.
+   *
+   * `GET /v2/api.json?p={name}` (via packagephobia.com)
+   *
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Publish and install size in bytes, file counts, and human-readable strings
+   *
+   * @example
+   * ```typescript
+   * const size = await npm.package('react').size();
+   * console.log(size.install.pretty); // "300 kB"
+   * console.log(size.install.bytes);  // 307200
+   * ```
+   */
+  async size(signal?: AbortSignal): Promise<PackagephobiaSize> {
+    return this.request<PackagephobiaSize>(
+      '/v2/api.json',
+      { p: this.name },
+      'packagephobia',
+      signal,
+    );
+  }
+
+  /**
+   * Fetches CDN usage statistics for this package from jsDelivr.
+   *
+   * CDN stats reflect real browser/frontend usage, complementing npm download
+   * counts which measure install-time usage.
+   *
+   * `GET /package/npm/{name}/stats/{groupBy}/{period}` (via data.jsdelivr.com/v1)
+   *
+   * @param groupBy - Group results by `'version'` (default) or `'date'`
+   * @param period - Time period: `'day'`, `'week'`, `'month'` (default), or `'year'`
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns CDN hit counts, bandwidth, rank, and breakdown by version or date
+   *
+   * @example
+   * ```typescript
+   * const stats = await npm.package('react').cdnStats();
+   * console.log(stats.rank);   // 1
+   * console.log(stats.total);  // 1234567890
+   * ```
+   */
+  async cdnStats(
+    groupBy: JsdelivrGroupBy = 'version',
+    period: JsdelivrPeriod = 'month',
+    signal?: AbortSignal,
+  ): Promise<JsdelivrStats> {
+    return this.request<JsdelivrStats>(
+      `/package/npm/${encodeURIComponent(this.name)}/stats/${groupBy}/${period}`,
+      undefined,
+      'jsdelivr',
       signal,
     );
   }
