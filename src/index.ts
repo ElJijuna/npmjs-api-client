@@ -27,3 +27,20 @@ export type {
   NpmVersionDownloadPoint,
   NpmVersionDownloads,
 } from './domain/Downloads';
+export type {
+  NpmsScore,
+  NpmsScoreDetail,
+  NpmsEvaluation,
+  NpmsQualityEvaluation,
+  NpmsPopularityEvaluation,
+  NpmsMaintenanceEvaluation,
+} from './domain/Npms';
+export type { PackagephobiaSize, PackagephobiaSizeInfo } from './domain/Packagephobia';
+export type { JsdelivrStats, JsdelivrVersionEntry, JsdelivrPeriod, JsdelivrGroupBy } from './domain/Jsdelivr';
+export type { UnpkgFile } from './domain/Unpkg';
+export type {
+  DepsDevDependencies,
+  DepsDevDependencyNode,
+  DepsDevDependencyEdge,
+  DepsDevVersionKey,
+} from './domain/DepsDev';
