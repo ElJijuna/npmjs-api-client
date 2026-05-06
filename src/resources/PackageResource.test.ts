@@ -340,4 +340,149 @@ describe('PackageResource', () => {
       expect(result.name).toBe('react');
     });
   });
+
+  describe('score()', () => {
+    const scoreFixture = {
+      analyzedAt: '2024-01-01T00:00:00.000Z',
+      score: { final: 0.97, detail: { quality: 0.95, popularity: 0.99, maintenance: 0.98 } },
+      evaluation: {
+        quality: { carefulness: 0.9, tests: 0.8, health: 1, branding: 0.7 },
+        popularity: { communityInterest: 50000, downloadsCount: 1e8, downloadsAcceleration: 0.1, dependentsCount: 15000 },
+        maintenance: { releasesFrequency: 0.9, commitsFrequency: 0.95, openIssues: 0.8, issuesDistribution: 0.85 },
+      },
+    };
+
+    it('fetches the npms.io score', async () => {
+      mockResponse(scoreFixture);
+      const result = await npm.package('react').score();
+      expect(result.score.final).toBe(0.97);
+      expect(result.evaluation.popularity.dependentsCount).toBe(15000);
+    });
+
+    it('calls the npms.io API endpoint', async () => {
+      mockResponse(scoreFixture);
+      await npm.package('react').score();
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.npms.io/v2/package/react',
+        expect.any(Object),
+      );
+    });
+
+    it('encodes scoped package name in score URL', async () => {
+      mockResponse(scoreFixture);
+      await npm.package('@types/node').score();
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.npms.io/v2/package/%40types%2Fnode',
+        expect.any(Object),
+      );
+    });
+
+    it('does not send Authorization header to npms.io', async () => {
+      const authedNpm = new NpmClient({ token: 'secret' });
+      mockResponse(scoreFixture);
+      await authedNpm.package('react').score();
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>)['Authorization']).toBeUndefined();
+    });
+
+    it('passes signal to fetch', async () => {
+      mockResponse(scoreFixture);
+      const controller = new AbortController();
+      await npm.package('react').score(controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+  });
+
+  describe('size()', () => {
+    const sizeFixture = {
+      publish: { bytes: 12400, files: 10, pretty: '12.4 kB', color: 'green' },
+      install: { bytes: 307200, files: 35, pretty: '307 kB', color: 'green' },
+    };
+
+    it('fetches the packagephobia size for the latest version', async () => {
+      mockResponse(sizeFixture);
+      const result = await npm.package('react').size();
+      expect(result.install.bytes).toBe(307200);
+      expect(result.publish.pretty).toBe('12.4 kB');
+    });
+
+    it('calls packagephobia with the package name as query param', async () => {
+      mockResponse(sizeFixture);
+      await npm.package('react').size();
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://packagephobia.com/v2/api.json?p=react',
+        expect.any(Object),
+      );
+    });
+
+    it('does not send Authorization header to packagephobia', async () => {
+      const authedNpm = new NpmClient({ token: 'secret' });
+      mockResponse(sizeFixture);
+      await authedNpm.package('react').size();
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>)['Authorization']).toBeUndefined();
+    });
+
+    it('passes signal to fetch', async () => {
+      mockResponse(sizeFixture);
+      const controller = new AbortController();
+      await npm.package('react').size(controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+  });
+
+  describe('cdnStats()', () => {
+    const statsFixture = {
+      rank: 1,
+      total: 1234567890,
+      versions: {
+        '18.2.0': { total: 900000000, dates: { '2024-01-01': 30000000 } },
+      },
+    };
+
+    it('fetches CDN stats with defaults (version groupBy, month period)', async () => {
+      mockResponse(statsFixture);
+      const result = await npm.package('react').cdnStats();
+      expect(result.rank).toBe(1);
+      expect(result.total).toBe(1234567890);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://data.jsdelivr.com/v1/package/npm/react/stats/version/month',
+        expect.any(Object),
+      );
+    });
+
+    it('respects custom groupBy and period', async () => {
+      mockResponse(statsFixture);
+      await npm.package('react').cdnStats('date', 'week');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://data.jsdelivr.com/v1/package/npm/react/stats/date/week',
+        expect.any(Object),
+      );
+    });
+
+    it('encodes scoped package name in CDN stats URL', async () => {
+      mockResponse(statsFixture);
+      await npm.package('@types/node').cdnStats();
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://data.jsdelivr.com/v1/package/npm/%40types%2Fnode/stats/version/month',
+        expect.any(Object),
+      );
+    });
+
+    it('passes signal to fetch', async () => {
+      mockResponse(statsFixture);
+      const controller = new AbortController();
+      await npm.package('react').cdnStats('version', 'month', controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+  });
 });
