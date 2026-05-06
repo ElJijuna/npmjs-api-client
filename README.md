@@ -269,6 +269,48 @@ deps.edges.forEach(e => {
 });
 ```
 
+### Security audit
+
+Runs a security audit against the npm registry. The payload mirrors the top-level structure of `package-lock.json`.
+
+```typescript
+const payload = {
+  name: 'my-app',
+  version: '1.0.0',
+  requires: { lodash: '^4.17.11' },
+  dependencies: {
+    lodash: { version: '4.17.11', integrity: 'sha512-...' },
+  },
+};
+
+// Full audit — advisory details + recommended actions
+const result = await npm.audit(payload);
+
+console.log(result.metadata.vulnerabilities);
+// { info: 0, low: 0, moderate: 0, high: 1, critical: 0 }
+
+Object.values(result.advisories).forEach(a => {
+  console.log(`[${a.severity}] ${a.title}`);
+  console.log(`  module: ${a.module_name}@${a.vulnerable_versions}`);
+  console.log(`  fix:    upgrade to ${a.patched_versions}`);
+  console.log(`  url:    ${a.url}`);
+});
+
+result.actions.forEach(action => {
+  console.log(`${action.action}: ${action.module} → ${action.target}`);
+});
+
+// Quick audit — counts only, no advisory details (faster)
+const quick = await npm.auditQuick(payload);
+
+const { high, critical } = quick.metadata.vulnerabilities;
+if (high + critical > 0) {
+  console.error(`${high} high and ${critical} critical vulnerabilities found`);
+}
+```
+
+Both methods support `AbortSignal` and emit a `request` event with `method: 'POST'`.
+
 ### Search
 
 ```typescript
@@ -342,6 +384,8 @@ await npm.package('react').version('18.2.0').dependencies(controller.signal);
 await npm.package('react').downloads('last-week', controller.signal);
 await npm.search({ text: 'react' }, controller.signal);
 await npm.maintainer('sindresorhus').packages({}, controller.signal);
+await npm.audit(payload, controller.signal);
+await npm.auditQuick(payload, controller.signal);
 ```
 
 When aborted, `fetch` throws a `DOMException` with `name === 'AbortError'`. The `request` event is still emitted with the error attached.
@@ -432,6 +476,12 @@ import type {
 
   // deps.dev
   DepsDevDependencies, DepsDevDependencyNode, DepsDevDependencyEdge, DepsDevVersionKey,
+
+  // Audit
+  NpmAuditPayload, NpmAuditDependency,
+  NpmAuditResult, NpmAuditQuickResult,
+  NpmAuditAdvisory, NpmAuditAction, NpmAuditFinding,
+  NpmAuditMetadata, NpmAuditVulnerabilityCounts, NpmAuditSeverity,
 } from 'npmjs-api-client';
 ```
 

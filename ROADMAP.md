@@ -106,8 +106,8 @@ Requires npm registry authentication.
 
 | Method               | Endpoint                                     | Status |
 | -------------------- | -------------------------------------------- | ------ |
-| `audit(data)`        | `POST /-/npm/v1/security/audits`             | ⬜     |
-| `auditQuick(data)`   | `POST /-/npm/v1/security/audits/quick`       | ⬜     |
+| `audit(data)`        | `POST /-/npm/v1/security/audits`             | ✅     |
+| `auditQuick(data)`   | `POST /-/npm/v1/security/audits/quick`       | ✅     |
 
 ---
 ---

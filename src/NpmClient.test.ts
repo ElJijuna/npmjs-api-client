@@ -213,4 +213,153 @@ describe('NpmClient', () => {
       expect(headers['Authorization']).toBe('Bearer my-secret-token');
     });
   });
+
+  describe('audit()', () => {
+    const payload = {
+      name: 'my-app',
+      version: '1.0.0',
+      requires: { lodash: '^4.17.11' },
+      dependencies: {
+        lodash: { version: '4.17.11', integrity: 'sha512-abc' },
+      },
+    };
+
+    const auditResultFixture = {
+      actions: [
+        {
+          action: 'update',
+          module: 'lodash',
+          target: '4.17.21',
+          isMajor: false,
+          resolves: [{ id: 1067418, path: 'lodash', dev: false, optional: false, bundled: false }],
+        },
+      ],
+      advisories: {
+        '1067418': {
+          id: 1067418,
+          module_name: 'lodash',
+          vulnerable_versions: '<4.17.21',
+          patched_versions: '>=4.17.21',
+          severity: 'high',
+          title: 'Prototype Pollution',
+          url: 'https://npmjs.com/advisories/1067418',
+          recommendation: 'Upgrade to version 4.17.21 or later',
+          overview: 'Lodash versions prior to 4.17.21 are vulnerable to prototype pollution.',
+          cves: ['CVE-2021-23337'],
+          cwe: 'CWE-78',
+          findings: [{ version: '4.17.11', paths: ['lodash'], dev: false, optional: false, bundled: false }],
+          created: '2021-01-01T00:00:00.000Z',
+          updated: '2021-06-01T00:00:00.000Z',
+        },
+      },
+      muted: [],
+      metadata: {
+        vulnerabilities: { info: 0, low: 0, moderate: 0, high: 1, critical: 0 },
+        dependencies: 1,
+        devDependencies: 0,
+        optionalDependencies: 0,
+        totalDependencies: 1,
+      },
+    };
+
+    it('POSTs to the full audit endpoint', async () => {
+      mockResponse(auditResultFixture);
+      await npm.audit(payload);
+      const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('https://registry.npmjs.org/-/npm/v1/security/audits');
+      expect(init.method).toBe('POST');
+    });
+
+    it('sends the payload as JSON', async () => {
+      mockResponse(auditResultFixture);
+      await npm.audit(payload);
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(init.body).toBe(JSON.stringify(payload));
+      expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
+    });
+
+    it('returns advisories and actions', async () => {
+      mockResponse(auditResultFixture);
+      const result = await npm.audit(payload);
+      expect(result.metadata.vulnerabilities.high).toBe(1);
+      expect(result.advisories['1067418'].module_name).toBe('lodash');
+      expect(result.actions[0].target).toBe('4.17.21');
+    });
+
+    it('sends Authorization header when token provided', async () => {
+      const client = new NpmClient({ token: 'secret' });
+      mockResponse(auditResultFixture);
+      await client.audit(payload);
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer secret');
+    });
+
+    it('emits a request event with method POST', async () => {
+      mockResponse(auditResultFixture);
+      const events: unknown[] = [];
+      npm.on('request', e => events.push(e));
+      await npm.audit(payload);
+      const event = events[0] as { method: string; url: string };
+      expect(event.method).toBe('POST');
+      expect(event.url).toContain('/security/audits');
+    });
+
+    it('throws NpmApiError on non-2xx response', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false, status: 400, statusText: 'Bad Request', json: jest.fn() });
+      await expect(npm.audit(payload)).rejects.toThrow(NpmApiError);
+    });
+
+    it('passes signal to fetch', async () => {
+      mockResponse(auditResultFixture);
+      const controller = new AbortController();
+      await npm.audit(payload, controller.signal);
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(init.signal).toBe(controller.signal);
+    });
+  });
+
+  describe('auditQuick()', () => {
+    const payload = {
+      name: 'my-app',
+      version: '1.0.0',
+      requires: { lodash: '^4.17.11' },
+      dependencies: {
+        lodash: { version: '4.17.11', integrity: 'sha512-abc' },
+      },
+    };
+
+    const quickResultFixture = {
+      wheres: {},
+      metadata: {
+        vulnerabilities: { info: 0, low: 0, moderate: 0, high: 1, critical: 0 },
+        dependencies: 1,
+        devDependencies: 0,
+        optionalDependencies: 0,
+        totalDependencies: 1,
+      },
+    };
+
+    it('POSTs to the quick audit endpoint', async () => {
+      mockResponse(quickResultFixture);
+      await npm.auditQuick(payload);
+      const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('https://registry.npmjs.org/-/npm/v1/security/audits/quick');
+      expect(init.method).toBe('POST');
+    });
+
+    it('returns vulnerability counts', async () => {
+      mockResponse(quickResultFixture);
+      const result = await npm.auditQuick(payload);
+      expect(result.metadata.vulnerabilities.high).toBe(1);
+      expect(result.metadata.totalDependencies).toBe(1);
+    });
+
+    it('passes signal to fetch', async () => {
+      mockResponse(quickResultFixture);
+      const controller = new AbortController();
+      await npm.auditQuick(payload, controller.signal);
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(init.signal).toBe(controller.signal);
+    });
+  });
 });

@@ -3,6 +3,7 @@ import { PackageResource } from './resources/PackageResource';
 import { MaintainerResource } from './resources/MaintainerResource';
 import type { NpmSearchResult, NpmSearchParams } from './domain/Search';
 import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod } from './domain/Downloads';
+import type { NpmAuditPayload, NpmAuditResult, NpmAuditQuickResult } from './domain/Audit';
 
 const DEFAULT_REGISTRY_URL = 'https://registry.npmjs.org';
 const DEFAULT_DOWNLOADS_URL = 'https://api.npmjs.org';
@@ -19,7 +20,7 @@ export interface RequestEvent {
   /** Full URL that was requested */
   url: string;
   /** HTTP method used */
-  method: 'GET';
+  method: 'GET' | 'POST';
   /** Timestamp when the request started */
   startedAt: Date;
   /** Timestamp when the request finished (success or error) */
@@ -237,6 +238,48 @@ export class NpmClient {
     }
   }
 
+  /** @internal */
+  private async post<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+    const url = `${this.registryUrl}${path}`;
+    const startedAt = new Date();
+    let statusCode: number | undefined;
+    const headers = { ...this.buildHeaders('registry'), 'Content-Type': 'application/json' };
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal,
+      });
+      statusCode = response.status;
+      if (!response.ok) {
+        throw new NpmApiError(response.status, response.statusText);
+      }
+      const data = await response.json() as T;
+      this.emit('request', {
+        url,
+        method: 'POST',
+        startedAt,
+        finishedAt: new Date(),
+        durationMs: Date.now() - startedAt.getTime(),
+        statusCode,
+      });
+      return data;
+    } catch (err) {
+      const finishedAt = new Date();
+      this.emit('request', {
+        url,
+        method: 'POST',
+        startedAt,
+        finishedAt,
+        durationMs: finishedAt.getTime() - startedAt.getTime(),
+        statusCode,
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      throw err;
+    }
+  }
+
   /**
    * Returns a {@link PackageResource} for a given package name, providing access
    * to package metadata, versions, dist-tags, and download statistics.
@@ -373,6 +416,79 @@ export class NpmClient {
       'downloads',
       signal,
     );
+  }
+
+  /**
+   * Runs a full security audit against the npm registry.
+   *
+   * The payload mirrors the top-level structure of `package-lock.json`:
+   * a `name`, `version`, and a `dependencies` map of resolved packages with their
+   * versions, integrity hashes, and nested sub-dependencies.
+   *
+   * Returns detailed advisory objects for every vulnerability found, along with
+   * recommended actions (update, install, or manual review).
+   *
+   * `POST /-/npm/v1/security/audits`
+   *
+   * @param payload - Lock-file-shaped dependency tree to audit
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Full audit report with advisories, actions, and vulnerability counts
+   *
+   * @example
+   * ```typescript
+   * const result = await npm.audit({
+   *   name: 'my-app',
+   *   version: '1.0.0',
+   *   requires: { lodash: '^4.17.11' },
+   *   dependencies: {
+   *     lodash: { version: '4.17.11', integrity: 'sha512-...' },
+   *   },
+   * });
+   *
+   * console.log(result.metadata.vulnerabilities);
+   * // { info: 0, low: 0, moderate: 1, high: 0, critical: 0 }
+   *
+   * Object.values(result.advisories).forEach(a => {
+   *   console.log(`[${a.severity}] ${a.title} — ${a.module_name}@${a.vulnerable_versions}`);
+   *   console.log(`  Fix: upgrade to ${a.patched_versions}`);
+   * });
+   * ```
+   */
+  async audit(payload: NpmAuditPayload, signal?: AbortSignal): Promise<NpmAuditResult> {
+    return this.post<NpmAuditResult>('/-/npm/v1/security/audits', payload, signal);
+  }
+
+  /**
+   * Runs a quick security audit against the npm registry.
+   *
+   * Same payload as {@link audit} but returns only vulnerability counts by severity —
+   * no advisory details or recommended actions. Faster and lighter than the full audit.
+   *
+   * `POST /-/npm/v1/security/audits/quick`
+   *
+   * @param payload - Lock-file-shaped dependency tree to audit
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Vulnerability counts by severity and dependency totals
+   *
+   * @example
+   * ```typescript
+   * const result = await npm.auditQuick({
+   *   name: 'my-app',
+   *   version: '1.0.0',
+   *   requires: { lodash: '^4.17.11' },
+   *   dependencies: {
+   *     lodash: { version: '4.17.11', integrity: 'sha512-...' },
+   *   },
+   * });
+   *
+   * const { high, critical } = result.metadata.vulnerabilities;
+   * if (high + critical > 0) {
+   *   console.error(`Found ${high} high and ${critical} critical vulnerabilities`);
+   * }
+   * ```
+   */
+  async auditQuick(payload: NpmAuditPayload, signal?: AbortSignal): Promise<NpmAuditQuickResult> {
+    return this.post<NpmAuditQuickResult>('/-/npm/v1/security/audits/quick', payload, signal);
   }
 }
 
