@@ -10,10 +10,15 @@
 
 ## Active data sources
 
-| Source           | Base URL                | Data provided                                              |
-| ---------------- | ----------------------- | ---------------------------------------------------------- |
-| npm Registry     | `registry.npmjs.org`    | Metadata, versions, dist-tags, search, maintainers         |
-| npm Downloads API | `api.npmjs.org`        | Historical download counts by period and by version        |
+| Source            | Base URL                     | Data provided                                                     |
+| ----------------- | ---------------------------- | ----------------------------------------------------------------- |
+| npm Registry      | `registry.npmjs.org`         | Metadata, versions, dist-tags, search, maintainers                |
+| npm Downloads API | `api.npmjs.org`              | Historical download counts by period and by version               |
+| npms.io           | `api.npms.io/v2`             | Quality, maintenance & popularity scores with detailed evaluation  |
+| Packagephobia     | `packagephobia.com`          | Publish size and full install size including transitive deps       |
+| jsDelivr          | `data.jsdelivr.com/v1`       | CDN usage stats — browser/production hits by version and file     |
+| unpkg             | `unpkg.com`                  | Full file tree with individual file sizes and paths               |
+| deps.dev          | `api.deps.dev/v3`            | Resolved dependency graph with exact versions and direct/indirect |
 
 ---
 
@@ -42,9 +47,9 @@
 | `distTags(signal?)`               | `GET /-/package/{name}/dist-tags`                                     | ✅     |
 | `downloads(period?, signal?)`     | `GET /downloads/point/{period}/{name}`                                | ✅     |
 | `downloadRange(period?, signal?)` | `GET /downloads/range/{period}/{name}`                                | ✅     |
-| `score(signal?)`                  | `GET /package/{name}` via api.npms.io                                 | ⬜     |
-| `size(signal?)`                   | `GET /v2/api.json?p={name}` via packagephobia.com                     | ⬜     |
-| `cdnStats(groupBy?, period?, signal?)` | `GET /package/npm/{name}/stats/{groupBy}/{period}` via data.jsdelivr.com | ⬜ |
+| `score(signal?)`                  | `GET /package/{name}` via api.npms.io                                 | ✅     |
+| `size(signal?)`                   | `GET /v2/api.json?p={name}` via packagephobia.com                     | ✅     |
+| `cdnStats(groupBy?, period?, signal?)` | `GET /package/npm/{name}/stats/{groupBy}/{period}` via data.jsdelivr.com | ✅ |
 | `addDistTag(tag, version)`        | `PUT /-/package/{name}/dist-tags/{tag}`                               | ⬜     |
 | `removeDistTag(tag)`              | `DELETE /-/package/{name}/dist-tags/{tag}`                            | ⬜     |
 | `deprecate(version, message)`     | `PUT /{name}` (deprecation)                                           | ⬜     |
@@ -58,10 +63,10 @@
 | ----------------------------------------- | -------------------------------------------------------------------------------- | ------ |
 | `get(signal?)`                            | `GET /{name}/{version}`                                                          | ✅     |
 | `downloads(period?, signal?)`             | `GET /versions/{name}/last-week` via api.npmjs.org                               | ✅     |
-| `size(signal?)`                           | `GET /v2/api.json?p={name}@{version}` via packagephobia.com                      | ⬜     |
-| `files(signal?)`                          | `GET /{name}@{version}/?meta` via unpkg.com                                      | ⬜     |
-| `cdnStats(groupBy?, period?, signal?)`    | `GET /package/npm/{name}@{version}/stats/{groupBy}/{period}` via data.jsdelivr.com | ⬜   |
-| `dependencies(signal?)`                   | `GET /systems/npm/packages/{name}/versions/{version}:dependencies` via api.deps.dev | ⬜  |
+| `size(signal?)`                           | `GET /v2/api.json?p={name}@{version}` via packagephobia.com                      | ✅     |
+| `files(signal?)`                          | `GET /{name}@{version}/?meta` via unpkg.com                                      | ✅     |
+| `cdnStats(groupBy?, period?, signal?)`    | `GET /package/npm/{name}@{version}/stats/{groupBy}/{period}` via data.jsdelivr.com | ✅   |
+| `dependencies(signal?)`                   | `GET /systems/npm/packages/{name}/versions/{version}:dependencies` via api.deps.dev | ✅  |
 
 ---
 
