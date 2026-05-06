@@ -6,6 +6,11 @@ import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod } from './do
 
 const DEFAULT_REGISTRY_URL = 'https://registry.npmjs.org';
 const DEFAULT_DOWNLOADS_URL = 'https://api.npmjs.org';
+const DEFAULT_NPMS_URL = 'https://api.npms.io/v2';
+const DEFAULT_PACKAGEPHOBIA_URL = 'https://packagephobia.com';
+const DEFAULT_JSDELIVR_URL = 'https://data.jsdelivr.com/v1';
+const DEFAULT_UNPKG_URL = 'https://unpkg.com';
+const DEFAULT_DEPS_DEV_URL = 'https://api.deps.dev/v3';
 
 /**
  * Payload emitted on every HTTP request made by {@link NpmClient}.
