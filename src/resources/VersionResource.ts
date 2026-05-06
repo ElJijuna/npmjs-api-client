@@ -1,5 +1,9 @@
 import type { NpmVersionDownloadPeriod, NpmVersionDownloadPoint, NpmVersionDownloads } from '../domain/Downloads';
 import type { NpmPackageVersion } from '../domain/PackageVersion';
+import type { PackagephobiaSize } from '../domain/Packagephobia';
+import type { JsdelivrStats, JsdelivrGroupBy, JsdelivrPeriod } from '../domain/Jsdelivr';
+import type { UnpkgFile } from '../domain/Unpkg';
+import type { DepsDevDependencies } from '../domain/DepsDev';
 import type { RequestFn } from './types';
 
 export type { RequestFn };
@@ -92,5 +96,114 @@ export class VersionResource implements PromiseLike<NpmPackageVersion> {
       version: this.ver,
       period,
     };
+  }
+
+  /**
+   * Fetches the publish size and full install size (including all transitive dependencies)
+   * for this specific version from Packagephobia.
+   *
+   * `GET /v2/api.json?p={name}@{version}` (via packagephobia.com)
+   *
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Publish and install size in bytes, file counts, and human-readable strings
+   *
+   * @example
+   * ```typescript
+   * const size = await npm.package('react').version('18.2.0').size();
+   * console.log(size.install.pretty); // "300 kB"
+   * ```
+   */
+  async size(signal?: AbortSignal): Promise<PackagephobiaSize> {
+    return this.request<PackagephobiaSize>(
+      '/v2/api.json',
+      { p: `${this.packageName}@${this.ver}` },
+      'packagephobia',
+      signal,
+    );
+  }
+
+  /**
+   * Fetches the complete file tree of this package version from unpkg.
+   *
+   * Returns every file and directory included in the published tarball, with
+   * individual file sizes, types, and paths — useful for auditing package contents.
+   *
+   * `GET /{name}@{version}/?meta` (via unpkg.com)
+   *
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Recursive file tree of the package
+   *
+   * @example
+   * ```typescript
+   * const tree = await npm.package('react').version('18.2.0').files();
+   * tree.files?.forEach(f => console.log(f.path, f.size));
+   * ```
+   */
+  async files(signal?: AbortSignal): Promise<UnpkgFile> {
+    return this.request<UnpkgFile>(
+      `/${encodeURIComponent(this.packageName)}@${encodeURIComponent(this.ver)}/`,
+      { meta: '' },
+      'unpkg',
+      signal,
+    );
+  }
+
+  /**
+   * Fetches CDN usage statistics for this specific version from jsDelivr.
+   *
+   * At version level, results are grouped by file by default, showing which
+   * individual files are most requested from browsers in production.
+   *
+   * `GET /package/npm/{name}@{version}/stats/{groupBy}/{period}` (via data.jsdelivr.com/v1)
+   *
+   * @param groupBy - Group results by `'file'` (default) or `'date'`
+   * @param period - Time period: `'day'`, `'week'`, `'month'` (default), or `'year'`
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns CDN hit counts and bandwidth breakdown by file or date
+   *
+   * @example
+   * ```typescript
+   * const stats = await npm.package('react').version('18.2.0').cdnStats();
+   * console.log(stats.total);
+   * ```
+   */
+  async cdnStats(
+    groupBy: JsdelivrGroupBy = 'file',
+    period: JsdelivrPeriod = 'month',
+    signal?: AbortSignal,
+  ): Promise<JsdelivrStats> {
+    return this.request<JsdelivrStats>(
+      `/package/npm/${encodeURIComponent(this.packageName)}@${encodeURIComponent(this.ver)}/stats/${groupBy}/${period}`,
+      undefined,
+      'jsdelivr',
+      signal,
+    );
+  }
+
+  /**
+   * Fetches the fully resolved dependency graph for this version from deps.dev.
+   *
+   * Unlike the semver ranges in `package.json`, this returns exact resolved versions
+   * for every direct and transitive dependency, along with the dependency graph edges.
+   *
+   * `GET /systems/npm/packages/{name}/versions/{version}:dependencies` (via api.deps.dev/v3)
+   *
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Dependency nodes (with resolved versions and relation type) and graph edges
+   *
+   * @example
+   * ```typescript
+   * const deps = await npm.package('react').version('18.2.0').dependencies();
+   * const direct = deps.nodes.filter(n => n.relation === 'DIRECT');
+   * console.log(direct.map(n => `${n.versionKey.name}@${n.versionKey.version}`));
+   * ```
+   */
+  async dependencies(signal?: AbortSignal): Promise<DepsDevDependencies> {
+    return this.request<DepsDevDependencies>(
+      `/systems/npm/packages/${encodeURIComponent(this.packageName)}/versions/${encodeURIComponent(this.ver)}:dependencies`,
+      undefined,
+      'depsdev',
+      signal,
+    );
   }
 }
