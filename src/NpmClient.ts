@@ -51,8 +51,28 @@ export interface NpmClientOptions {
    */
   downloadsApiUrl?: string;
   /**
+   * Base URL for the npms.io API (default: `'https://api.npms.io/v2'`).
+   */
+  npmsApiUrl?: string;
+  /**
+   * Base URL for the Packagephobia API (default: `'https://packagephobia.com'`).
+   */
+  packagephobiaUrl?: string;
+  /**
+   * Base URL for the jsDelivr data API (default: `'https://data.jsdelivr.com/v1'`).
+   */
+  jsdelivrUrl?: string;
+  /**
+   * Base URL for the unpkg CDN (default: `'https://unpkg.com'`).
+   */
+  unpkgUrl?: string;
+  /**
+   * Base URL for the deps.dev API (default: `'https://api.deps.dev/v3'`).
+   */
+  depsDevUrl?: string;
+  /**
    * Bearer token for authenticated requests (e.g. private registry access).
-   * Not required for public registry read operations.
+   * Sent only to the registry and downloads API — never to third-party sources.
    */
   token?: string;
 }
@@ -91,6 +111,11 @@ export interface NpmClientOptions {
 export class NpmClient {
   private readonly registryUrl: string;
   private readonly downloadsApiUrl: string;
+  private readonly npmsApiUrl: string;
+  private readonly packagephobiaUrl: string;
+  private readonly jsdelivrUrl: string;
+  private readonly unpkgUrl: string;
+  private readonly depsDevUrl: string;
   private readonly token?: string;
   private readonly listeners: Map<
     keyof NpmClientEvents,
@@ -103,6 +128,11 @@ export class NpmClient {
   constructor(options: NpmClientOptions = {}) {
     this.registryUrl = (options.registryUrl ?? DEFAULT_REGISTRY_URL).replace(/\/$/, '');
     this.downloadsApiUrl = (options.downloadsApiUrl ?? DEFAULT_DOWNLOADS_URL).replace(/\/$/, '');
+    this.npmsApiUrl = (options.npmsApiUrl ?? DEFAULT_NPMS_URL).replace(/\/$/, '');
+    this.packagephobiaUrl = (options.packagephobiaUrl ?? DEFAULT_PACKAGEPHOBIA_URL).replace(/\/$/, '');
+    this.jsdelivrUrl = (options.jsdelivrUrl ?? DEFAULT_JSDELIVR_URL).replace(/\/$/, '');
+    this.unpkgUrl = (options.unpkgUrl ?? DEFAULT_UNPKG_URL).replace(/\/$/, '');
+    this.depsDevUrl = (options.depsDevUrl ?? DEFAULT_DEPS_DEV_URL).replace(/\/$/, '');
     this.token = options.token;
   }
 
@@ -134,37 +164,50 @@ export class NpmClient {
     }
   }
 
-  private buildHeaders(): Record<string, string> {
+  private buildHeaders(baseUrl: string): Record<string, string> {
     const headers: Record<string, string> = {
       'Accept': 'application/json',
     };
-    if (this.token) {
+    if (this.token && (baseUrl === 'registry' || baseUrl === 'downloads')) {
       headers['Authorization'] = `Bearer ${this.token}`;
     }
     return headers;
   }
 
+  private resolveBaseUrl(key: string): string {
+    const map: Record<string, string> = {
+      registry: this.registryUrl,
+      downloads: this.downloadsApiUrl,
+      npms: this.npmsApiUrl,
+      packagephobia: this.packagephobiaUrl,
+      jsdelivr: this.jsdelivrUrl,
+      unpkg: this.unpkgUrl,
+      depsdev: this.depsDevUrl,
+    };
+    return map[key] ?? this.registryUrl;
+  }
+
   /**
-   * Performs a GET request to either the registry or downloads API.
+   * Performs a GET request to the specified API.
    *
    * @param path - Path to append to the base URL
    * @param params - Optional query parameters
-   * @param baseUrl - Which base URL to use: `'registry'` (default) or `'downloads'`
+   * @param baseUrl - Which base URL to use: `'registry'` (default), `'downloads'`, `'npms'`, `'packagephobia'`, `'jsdelivr'`, `'unpkg'`, or `'depsdev'`
    * @param signal - Optional `AbortSignal` to cancel the request
    * @internal
    */
   private async request<T>(
     path: string,
     params?: Record<string, string | number | boolean>,
-    baseUrl: 'registry' | 'downloads' = 'registry',
+    baseUrl = 'registry',
     signal?: AbortSignal,
   ): Promise<T> {
-    const base = baseUrl === 'downloads' ? this.downloadsApiUrl : this.registryUrl;
+    const base = this.resolveBaseUrl(baseUrl);
     const url = buildUrl(`${base}${path}`, params);
     const startedAt = new Date();
     let statusCode: number | undefined;
     try {
-      const response = await fetch(url, { headers: this.buildHeaders(), signal });
+      const response = await fetch(url, { headers: this.buildHeaders(baseUrl), signal });
       statusCode = response.status;
       if (!response.ok) {
         throw new NpmApiError(response.status, response.statusText);
