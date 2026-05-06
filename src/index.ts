@@ -44,3 +44,16 @@ export type {
   DepsDevDependencyEdge,
   DepsDevVersionKey,
 } from './domain/DepsDev';
+export type {
+  NpmAuditPayload,
+  NpmAuditDependency,
+  NpmAuditResult,
+  NpmAuditQuickResult,
+  NpmAuditAdvisory,
+  NpmAuditAction,
+  NpmAuditFinding,
+  NpmAuditResolve,
+  NpmAuditMetadata,
+  NpmAuditVulnerabilityCounts,
+  NpmAuditSeverity,
+} from './domain/Audit';
