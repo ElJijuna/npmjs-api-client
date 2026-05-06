@@ -2,7 +2,7 @@ import { NpmApiError } from './errors/NpmApiError';
 import { PackageResource } from './resources/PackageResource';
 import { MaintainerResource } from './resources/MaintainerResource';
 import type { NpmSearchResult, NpmSearchParams } from './domain/Search';
-import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod } from './domain/Downloads';
+import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod, NpmBulkDownloads } from './domain/Downloads';
 import type { NpmAuditPayload, NpmAuditResult, NpmAuditQuickResult } from './domain/Audit';
 
 const DEFAULT_REGISTRY_URL = 'https://registry.npmjs.org';
@@ -412,6 +412,37 @@ export class NpmClient {
   ): Promise<NpmDownloadRange> {
     return this.request<NpmDownloadRange>(
       `/downloads/range/${period}/${encodeURIComponent(packageName)}`,
+      undefined,
+      'downloads',
+      signal,
+    );
+  }
+
+  /**
+   * Fetches the total download count for multiple packages in a single request.
+   *
+   * `GET /downloads/point/{period}/{name1},{name2},...` (via api.npmjs.org)
+   *
+   * @param packages - Array of package names to fetch downloads for (max 128)
+   * @param period - Named period or date range (default: `'last-month'`)
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns A map of package name to download point data
+   *
+   * @example
+   * ```typescript
+   * const stats = await npm.bulkDownloads(['react', 'vue', 'angular']);
+   * console.log(stats['react'].downloads); // 18591460
+   * console.log(stats['vue'].downloads);   // 4200000
+   * ```
+   */
+  async bulkDownloads(
+    packages: string[],
+    period: NpmDownloadPeriod = 'last-month',
+    signal?: AbortSignal,
+  ): Promise<NpmBulkDownloads> {
+    const names = packages.map(encodeURIComponent).join(',');
+    return this.request<NpmBulkDownloads>(
+      `/downloads/point/${period}/${names}`,
       undefined,
       'downloads',
       signal,

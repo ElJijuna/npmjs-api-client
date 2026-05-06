@@ -53,7 +53,7 @@
 | `addDistTag(tag, version)`        | `PUT /-/package/{name}/dist-tags/{tag}`                               | ⬜     |
 | `removeDistTag(tag)`              | `DELETE /-/package/{name}/dist-tags/{tag}`                            | ⬜     |
 | `deprecate(version, message)`     | `PUT /{name}` (deprecation)                                           | ⬜     |
-| `bulkDownloads(period?)`          | `GET /downloads/point/{period}/{name1},{name2},...`                   | ⬜     |
+| `bulkDownloads(packages, period?)` | `GET /downloads/point/{period}/{name1},{name2},...`                  | ✅     |
 
 ---
 

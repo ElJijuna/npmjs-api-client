@@ -26,6 +26,7 @@ export type {
   NpmVersionDownloadPeriod,
   NpmVersionDownloadPoint,
   NpmVersionDownloads,
+  NpmBulkDownloads,
 } from './domain/Downloads';
 export type {
   NpmsScore,
