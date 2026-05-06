@@ -150,6 +150,18 @@ describe('MaintainerResource', () => {
     });
   });
 
+  describe('avatar()', () => {
+    it('returns the npm avatar URL for the username', () => {
+      const url = npm.maintainer('pilmee').avatar();
+      expect(url).toBe('https://www.npmjs.com/npm-avatar/pilmee');
+    });
+
+    it('works for any username', () => {
+      const url = npm.maintainer('sindresorhus').avatar();
+      expect(url).toBe('https://www.npmjs.com/npm-avatar/sindresorhus');
+    });
+  });
+
   describe('AbortSignal', () => {
     it('passes signal to fetch on info()', async () => {
       mockResponse({ objects: [], total: 0, time: '' });
