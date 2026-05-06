@@ -318,6 +318,79 @@ describe('NpmClient', () => {
     });
   });
 
+  describe('bulkDownloads()', () => {
+    const bulkFixture = {
+      react: { downloads: 18591460, start: '2024-03-14', end: '2024-04-13', package: 'react' },
+      lodash: { downloads: 3001256, start: '2024-03-14', end: '2024-04-13', package: 'lodash' },
+      vue: { downloads: 4200000, start: '2024-03-14', end: '2024-04-13', package: 'vue' },
+    };
+
+    it('fetches download counts for multiple packages', async () => {
+      mockResponse(bulkFixture);
+      const result = await npm.bulkDownloads(['react', 'lodash', 'vue']);
+      expect(result['react'].downloads).toBe(18591460);
+      expect(result['lodash'].downloads).toBe(3001256);
+      expect(result['vue'].downloads).toBe(4200000);
+    });
+
+    it('calls the downloads API with comma-separated package names', async () => {
+      mockResponse(bulkFixture);
+      await npm.bulkDownloads(['react', 'lodash', 'vue']);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.npmjs.org/downloads/point/last-month/react,lodash,vue',
+        expect.any(Object),
+      );
+    });
+
+    it('uses last-month as default period', async () => {
+      mockResponse(bulkFixture);
+      await npm.bulkDownloads(['react', 'lodash']);
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain('/last-month/');
+    });
+
+    it('respects a custom period', async () => {
+      mockResponse(bulkFixture);
+      await npm.bulkDownloads(['react', 'lodash'], 'last-week');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.npmjs.org/downloads/point/last-week/react,lodash',
+        expect.any(Object),
+      );
+    });
+
+    it('encodes scoped package names', async () => {
+      mockResponse({ '@types/node': { downloads: 100, start: '2024-03-14', end: '2024-04-13', package: '@types/node' } });
+      await npm.bulkDownloads(['@types/node']);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.npmjs.org/downloads/point/last-month/%40types%2Fnode',
+        expect.any(Object),
+      );
+    });
+
+    it('sends Authorization header to downloads API when token is provided', async () => {
+      const authedNpm = new NpmClient({ token: 'secret' });
+      mockResponse(bulkFixture);
+      await authedNpm.bulkDownloads(['react', 'lodash']);
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer secret');
+    });
+
+    it('passes signal to fetch', async () => {
+      mockResponse(bulkFixture);
+      const controller = new AbortController();
+      await npm.bulkDownloads(['react', 'lodash'], 'last-month', controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('throws NpmApiError on non-2xx response', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found', json: jest.fn() });
+      await expect(npm.bulkDownloads(['nonexistent-xyz'])).rejects.toThrow(NpmApiError);
+    });
+  });
+
   describe('auditQuick()', () => {
     const payload = {
       name: 'my-app',

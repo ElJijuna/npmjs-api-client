@@ -124,6 +124,14 @@ console.log(versionStats.downloads);
 // Convenience methods on the client directly
 const stats = await npm.downloads('last-week', 'typescript');
 const range = await npm.downloadRange('last-month', 'typescript');
+
+// Bulk downloads — multiple packages in a single request
+const bulk = await npm.bulkDownloads(['react', 'vue', 'angular']);
+const bulk = await npm.bulkDownloads(['react', 'vue'], 'last-week');
+
+console.log(bulk['react'].downloads);   // 18591460
+console.log(bulk['vue'].downloads);     // 4200000
+console.log(bulk['angular'].downloads); // 1800000
 ```
 
 ### Quality score — npms.io
@@ -384,6 +392,7 @@ await npm.package('react').version('18.2.0').dependencies(controller.signal);
 await npm.package('react').downloads('last-week', controller.signal);
 await npm.search({ text: 'react' }, controller.signal);
 await npm.maintainer('sindresorhus').packages({}, controller.signal);
+await npm.bulkDownloads(['react', 'vue'], 'last-week', controller.signal);
 await npm.audit(payload, controller.signal);
 await npm.auditQuick(payload, controller.signal);
 ```
@@ -459,7 +468,7 @@ import type {
 
   // Downloads
   NpmDownloadPoint, NpmDownloadRange, NpmDownloadDay, NpmDownloadPeriod,
-  NpmVersionDownloadPeriod, NpmVersionDownloadPoint,
+  NpmVersionDownloadPeriod, NpmVersionDownloadPoint, NpmBulkDownloads,
 
   // npms.io
   NpmsScore, NpmsScoreDetail, NpmsEvaluation,
