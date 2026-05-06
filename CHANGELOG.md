@@ -1,3 +1,12 @@
+# [1.6.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.5.0...v1.6.0) (2026-05-06)
+
+
+### Features
+
+* add avatar() to MaintainerResource. ([d7a1c61](https://github.com/ElJijuna/npmjs-api-client/commit/d7a1c61e6cf167ac00885e8eafd94a8cd02c7029))
+* add bulkDownloads() to fetch download counts for multiple packages in one request ([21b83ed](https://github.com/ElJijuna/npmjs-api-client/commit/21b83ed190ddcda023fbc2dd6a0682d69d882e2a))
+* add security audit support (audit, auditQuick) ([a51758f](https://github.com/ElJijuna/npmjs-api-client/commit/a51758f96ec50d1b67de6f99f472fc055ce50f62))
+
 # [1.5.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.4.0...v1.5.0) (2026-05-06)
 
 
