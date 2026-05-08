@@ -353,11 +353,11 @@ const scoped = await npm.topByScope('@types', 10);
 ```typescript
 // Public profile
 const user = await npm.maintainer('sindresorhus').info();
-console.log(user.name, user.email, user.avatarUrl);
+console.log(user.name, user.email);
 
-// Avatar URL (no API call — derived from username)
-const avatarUrl = npm.maintainer('sindresorhus').avatar();
-// 'https://www.npmjs.com/npm-avatar/sindresorhus'
+// Avatar URL derived from the maintainer's public email
+const avatarUrl = await npm.maintainer('sindresorhus').avatar();
+// 'https://www.gravatar.com/avatar/...'
 
 // All packages maintained (paginated)
 const result = await npm.maintainer('sindresorhus').packages();
