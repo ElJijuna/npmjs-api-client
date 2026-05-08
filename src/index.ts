@@ -4,8 +4,10 @@ export type { NpmClientOptions, RequestEvent, NpmClientEvents } from './NpmClien
 export { PackageResource } from './resources/PackageResource';
 export { VersionResource } from './resources/VersionResource';
 export { MaintainerResource } from './resources/MaintainerResource';
+export { OrgResource } from './resources/OrgResource';
 export type { MaintainerPackagesParams } from './resources/MaintainerResource';
 export type { NpmUser } from './domain/NpmUser';
+export type { NpmOrgPackageAccess, NpmOrgPackages, NpmOrgMemberRole, NpmOrgMembers } from './domain/Org';
 export type { NpmPackument, NpmPerson, NpmRepository } from './domain/Packument';
 export type { NpmPackageVersion, NpmDist } from './domain/PackageVersion';
 export type { NpmDistTags } from './domain/DistTag';

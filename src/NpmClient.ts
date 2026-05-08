@@ -1,6 +1,7 @@
 import { NpmApiError } from './errors/NpmApiError';
 import { PackageResource } from './resources/PackageResource';
 import { MaintainerResource } from './resources/MaintainerResource';
+import { OrgResource } from './resources/OrgResource';
 import type { NpmSearchResult, NpmSearchParams } from './domain/Search';
 import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod, NpmBulkDownloads } from './domain/Downloads';
 import type { NpmAuditPayload, NpmAuditResult, NpmAuditQuickResult } from './domain/Audit';
@@ -442,6 +443,30 @@ export class NpmClient {
       <T>(path: string, params?: Record<string, string | number | boolean>, _baseUrl?: string, signal?: AbortSignal) =>
         this.request<T>(path, params, 'registry', signal),
       username,
+    );
+  }
+
+  /**
+   * Returns an {@link OrgResource} for a given npm organization, providing
+   * authenticated access to org packages, teams, and members.
+   *
+   * These endpoints require a registry auth token with org access.
+   *
+   * @param org - The npm org name, with or without the leading `@`
+   * @returns An org resource with `packages()`, `teams()`, `members()`, and `teamMembers()` methods
+   *
+   * @example
+   * ```typescript
+   * const npm = new NpmClient({ token: 'npm_...' });
+   * const packages = await npm.org('npmcli').packages();
+   * const teams = await npm.org('npmcli').teams();
+   * ```
+   */
+  org(org: string): OrgResource {
+    return new OrgResource(
+      <T>(path: string, params?: Record<string, string | number | boolean>, _baseUrl?: string, signal?: AbortSignal) =>
+        this.request<T>(path, params, 'registry', signal),
+      org,
     );
   }
 
