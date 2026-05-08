@@ -368,6 +368,28 @@ result.objects.forEach(o => console.log(o.package.name, o.package.version));
 const page2 = await npm.maintainer('sindresorhus').packages({ size: 25, from: 25 });
 ```
 
+### Organization
+
+```typescript
+const npm = new NpmClient({ token: 'npm_...' });
+
+// Packages the org can access
+const packages = await npm.org('npmcli').packages();
+console.log(packages['@npmcli/arborist']); // 'read-write'
+
+// Teams in the org
+const teams = await npm.org('npmcli').teams();
+teams.forEach(team => console.log(team)); // 'npmcli:developers'
+
+// Org members and roles
+const members = await npm.org('npmcli').members();
+console.log(members.isaacs); // 'owner'
+
+// Members in a specific team
+const developers = await npm.org('npmcli').teamMembers('developers');
+developers.forEach(username => console.log(username));
+```
+
 ---
 
 ## Chainable resource pattern

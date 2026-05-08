@@ -97,15 +97,17 @@ Requires npm registry authentication.
 
 ---
 
-## Planned: OrgResource
+## OrgResource
 
 Requires npm registry authentication.
 
-| Method                  | Endpoint                    | Status |
-| ----------------------- | --------------------------- | ------ |
-| `packages(org, params?)` | `GET /-/org/{org}/package` | ⬜     |
-| `teams(org)`            | `GET /-/org/{org}/team`     | ⬜     |
-| `members(org, team?)`   | `GET /-/org/{org}/user`     | ⬜     |
+| Method                  | Endpoint                       | Status |
+| ----------------------- | ------------------------------ | ------ |
+| `org(name)`             | — chainable                    | ✅     |
+| `packages(signal?)`     | `GET /-/org/{org}/package`     | ✅     |
+| `teams(signal?)`        | `GET /-/org/{org}/team`        | ✅     |
+| `members(signal?)`      | `GET /-/org/{org}/user`        | ✅     |
+| `teamMembers(team, signal?)` | `GET /-/org/{org}/{team}/user` | ✅ |
 
 ---
 
