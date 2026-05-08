@@ -94,6 +94,68 @@ describe('NpmClient', () => {
     });
   });
 
+  describe('top package helpers', () => {
+    function expectSearchParams(expected: Record<string, string>): void {
+      const url = new URL(mockFetch.mock.calls[0][0] as string);
+      expect(`${url.origin}${url.pathname}`).toBe('https://registry.npmjs.org/-/v1/search');
+      for (const [key, value] of Object.entries(expected)) {
+        expect(url.searchParams.get(key)).toBe(value);
+      }
+    }
+
+    it('topPackages() uses npm search default ranking', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      await npm.topPackages(10);
+      expectSearchParams({ text: '', size: '10' });
+    });
+
+    it('topPackages() defaults to 20 results', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      await npm.topPackages();
+      expectSearchParams({ text: '', size: '20' });
+    });
+
+    it('topPackages() passes signal to fetch', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      const controller = new AbortController();
+      await npm.topPackages(10, controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+
+    it('topByPopularity() ranks by popularity only', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      await npm.topByPopularity(5);
+      expectSearchParams({ text: '', size: '5', popularity: '1', quality: '0', maintenance: '0' });
+    });
+
+    it('topByQuality() ranks by quality only', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      await npm.topByQuality(5);
+      expectSearchParams({ text: '', size: '5', quality: '1', popularity: '0', maintenance: '0' });
+    });
+
+    it('topByMaintenance() ranks by maintenance only', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      await npm.topByMaintenance(5);
+      expectSearchParams({ text: '', size: '5', maintenance: '1', quality: '0', popularity: '0' });
+    });
+
+    it('topByKeyword() filters by keyword', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      await npm.topByKeyword('typescript', 7);
+      expectSearchParams({ text: 'keywords:typescript', size: '7' });
+    });
+
+    it('topByScope() filters by scope and accepts a leading @', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      await npm.topByScope('@types', 7);
+      expectSearchParams({ text: 'scope:types', size: '7' });
+    });
+  });
+
   describe('downloads()', () => {
     it('calls the downloads API', async () => {
       mockResponse({ downloads: 1000, start: '2024-01-01', end: '2024-01-31', package: 'react' });

@@ -330,6 +330,95 @@ export class NpmClient {
   }
 
   /**
+   * Returns the top packages according to npm search's default ranking.
+   *
+   * `GET /-/v1/search?text=&size={n}`
+   *
+   * The default npm ranking combines quality, popularity, and maintenance.
+   *
+   * @param n - Number of packages to return (default: 20, max: 250)
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Search results including packages, scores, and total count
+   *
+   * @example
+   * ```typescript
+   * const top = await npm.topPackages(10);
+   * top.objects.forEach(o => console.log(o.package.name, o.score.final));
+   * ```
+   */
+  async topPackages(n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
+    return this.search({ text: '', size: n }, signal);
+  }
+
+  /**
+   * Returns top packages ranked by popularity.
+   *
+   * `GET /-/v1/search?text=&size={n}&popularity=1&quality=0&maintenance=0`
+   *
+   * @param n - Number of packages to return (default: 20, max: 250)
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Search results including packages, scores, and total count
+   */
+  async topByPopularity(n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
+    return this.search({ text: '', size: n, popularity: 1, quality: 0, maintenance: 0 }, signal);
+  }
+
+  /**
+   * Returns top packages ranked by quality.
+   *
+   * `GET /-/v1/search?text=&size={n}&quality=1&popularity=0&maintenance=0`
+   *
+   * @param n - Number of packages to return (default: 20, max: 250)
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Search results including packages, scores, and total count
+   */
+  async topByQuality(n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
+    return this.search({ text: '', size: n, quality: 1, popularity: 0, maintenance: 0 }, signal);
+  }
+
+  /**
+   * Returns top packages ranked by maintenance.
+   *
+   * `GET /-/v1/search?text=&size={n}&maintenance=1&quality=0&popularity=0`
+   *
+   * @param n - Number of packages to return (default: 20, max: 250)
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Search results including packages, scores, and total count
+   */
+  async topByMaintenance(n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
+    return this.search({ text: '', size: n, maintenance: 1, quality: 0, popularity: 0 }, signal);
+  }
+
+  /**
+   * Returns top packages for a keyword.
+   *
+   * `GET /-/v1/search?text=keywords:{keyword}&size={n}`
+   *
+   * @param keyword - Keyword to filter by
+   * @param n - Number of packages to return (default: 20, max: 250)
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Search results including packages, scores, and total count
+   */
+  async topByKeyword(keyword: string, n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
+    return this.search({ text: `keywords:${keyword}`, size: n }, signal);
+  }
+
+  /**
+   * Returns top packages for a scope.
+   *
+   * `GET /-/v1/search?text=scope:{scope}&size={n}`
+   *
+   * @param scope - Scope to filter by, with or without the leading `@`
+   * @param n - Number of packages to return (default: 20, max: 250)
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Search results including packages, scores, and total count
+   */
+  async topByScope(scope: string, n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
+    const normalizedScope = scope.startsWith('@') ? scope.slice(1) : scope;
+    return this.search({ text: `scope:${normalizedScope}`, size: n }, signal);
+  }
+
+  /**
    * Returns a {@link MaintainerResource} for a given npm username, providing
    * access to all packages they maintain.
    *
