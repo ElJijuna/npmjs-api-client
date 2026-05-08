@@ -72,10 +72,12 @@ export class MaintainerResource {
     );
     const first: NpmSearchObject | undefined = result.objects[0];
     const publisher = first?.package.publisher;
+    const email = publisher?.email;
 
     return {
       name: publisher?.username ?? this.username,
-      email: publisher?.email,
+      email,
+      avatarUrl: email ? await gravatarUrl(email) : undefined,
     };
   }
 
@@ -129,4 +131,11 @@ export class MaintainerResource {
   avatar(): string {
     return `https://www.npmjs.com/npm-avatar/${this.username}`;
   }
+}
+
+async function gravatarUrl(email: string): Promise<string> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalizedEmail));
+  const hash = Array.from(new Uint8Array(hashBuffer), byte => byte.toString(16).padStart(2, '0')).join('');
+  return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=128`;
 }

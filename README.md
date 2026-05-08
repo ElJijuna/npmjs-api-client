@@ -353,7 +353,7 @@ const scoped = await npm.topByScope('@types', 10);
 ```typescript
 // Public profile
 const user = await npm.maintainer('sindresorhus').info();
-console.log(user.name, user.email);
+console.log(user.name, user.email, user.avatarUrl);
 
 // Avatar URL (no API call — derived from username)
 const avatarUrl = npm.maintainer('sindresorhus').avatar();
