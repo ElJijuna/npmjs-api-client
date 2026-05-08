@@ -1,3 +1,12 @@
+# [1.7.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.6.0...v1.7.0) (2026-05-08)
+
+
+### Features
+
+* add authenticated org resource. ([5b068c0](https://github.com/ElJijuna/npmjs-api-client/commit/5b068c07deef7563003da2e5972446cac4463009))
+* add maintainer avatar URL from gravatar. ([327dca9](https://github.com/ElJijuna/npmjs-api-client/commit/327dca910b16e62ed81bd9e6ade8c024f269802a))
+* add top package search helpers ([b97499d](https://github.com/ElJijuna/npmjs-api-client/commit/b97499d73d315a2329e8e9bc83cd644f2b0b5d86))
+
 # [1.6.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.5.0...v1.6.0) (2026-05-06)
 
 
