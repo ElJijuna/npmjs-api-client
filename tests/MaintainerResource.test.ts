@@ -65,6 +65,9 @@ describe('MaintainerResource', () => {
       const profile = await npm.maintainer('pilmee').info();
       expect(profile.name).toBe('pilmee');
       expect(profile.email).toBe('pilmee@gmail.com');
+      expect(profile.avatarUrl).toBe(
+        'https://www.gravatar.com/avatar/062d380b834f09366e280dce73f4a553cb56cc7e5714634ffda175c292436895?d=identicon&s=128',
+      );
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/-/v1/search?'),
         expect.any(Object),
@@ -94,6 +97,7 @@ describe('MaintainerResource', () => {
       });
       const profile = await npm.maintainer('pilmee').info();
       expect(profile.email).toBeUndefined();
+      expect(profile.avatarUrl).toBeUndefined();
     });
   });
 

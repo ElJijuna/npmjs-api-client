@@ -6,4 +6,6 @@ export interface NpmUser {
   name: string;
   /** Public email address (when available) */
   email?: string;
+  /** Gravatar URL derived from the public email address (when available) */
+  avatarUrl?: string;
 }
