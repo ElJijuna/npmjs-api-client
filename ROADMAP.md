@@ -32,6 +32,12 @@
 | `downloads(period, package, signal?)`    | `GET /downloads/point/{period}/{package}`         | ✅     |
 | `downloadRange(period, package, signal?)` | `GET /downloads/range/{period}/{package}`        | ✅     |
 | AbortSignal support on all methods       | —                                                 | ✅     |
+| `topPackages(n?, signal?)`               | `GET /-/v1/search?text=&size={n}`                                     | ✅     |
+| `topByPopularity(n?, signal?)`           | `GET /-/v1/search?text=&size={n}&popularity=1&quality=0&maintenance=0` | ✅     |
+| `topByQuality(n?, signal?)`              | `GET /-/v1/search?text=&size={n}&quality=1&popularity=0&maintenance=0` | ✅     |
+| `topByMaintenance(n?, signal?)`          | `GET /-/v1/search?text=&size={n}&maintenance=1&quality=0&popularity=0` | ✅     |
+| `topByKeyword(keyword, n?, signal?)`     | `GET /-/v1/search?text=keywords:{keyword}&size={n}`                   | ✅     |
+| `topByScope(scope, n?, signal?)`         | `GET /-/v1/search?text=scope:{scope}&size={n}`                        | ✅     |
 
 ---
 

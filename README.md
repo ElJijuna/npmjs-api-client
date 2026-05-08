@@ -338,6 +338,14 @@ results.objects.forEach(o => {
   console.log(o.package.name, o.package.version, o.score.final);
 });
 console.log(results.total); // total matches
+
+// Top package shortcuts
+const top = await npm.topPackages(10);
+const popular = await npm.topByPopularity(10);
+const quality = await npm.topByQuality(10);
+const maintained = await npm.topByMaintenance(10);
+const types = await npm.topByKeyword('typescript', 10);
+const scoped = await npm.topByScope('@types', 10);
 ```
 
 ### Maintainer
