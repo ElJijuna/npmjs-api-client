@@ -65,9 +65,6 @@ describe('MaintainerResource', () => {
       const profile = await npm.maintainer('pilmee').info();
       expect(profile.name).toBe('pilmee');
       expect(profile.email).toBe('pilmee@gmail.com');
-      expect(profile.avatarUrl).toBe(
-        'https://www.gravatar.com/avatar/062d380b834f09366e280dce73f4a553cb56cc7e5714634ffda175c292436895?d=identicon&s=128',
-      );
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/-/v1/search?'),
         expect.any(Object),
@@ -97,7 +94,6 @@ describe('MaintainerResource', () => {
       });
       const profile = await npm.maintainer('pilmee').info();
       expect(profile.email).toBeUndefined();
-      expect(profile.avatarUrl).toBeUndefined();
     });
   });
 
@@ -155,14 +151,46 @@ describe('MaintainerResource', () => {
   });
 
   describe('avatar()', () => {
-    it('returns the npm avatar URL for the username', () => {
-      const url = npm.maintainer('pilmee').avatar();
-      expect(url).toBe('https://www.npmjs.com/npm-avatar/pilmee');
+    it('returns a Gravatar URL derived from the public publisher email', async () => {
+      mockResponse({
+        ...mockSearchResult,
+        objects: [{
+          ...mockSearchResult.objects[0],
+          package: {
+            ...mockSearchResult.objects[0].package,
+            publisher: { username: 'pilmee', email: 'pilmee@gmail.com' },
+          },
+        }],
+      });
+      const url = await npm.maintainer('pilmee').avatar();
+      expect(url).toBe(
+        'https://www.gravatar.com/avatar/062d380b834f09366e280dce73f4a553cb56cc7e5714634ffda175c292436895?d=identicon&s=128',
+      );
     });
 
-    it('works for any username', () => {
-      const url = npm.maintainer('sindresorhus').avatar();
-      expect(url).toBe('https://www.npmjs.com/npm-avatar/sindresorhus');
+    it('returns undefined when no public email is available', async () => {
+      mockResponse({
+        ...mockSearchResult,
+        objects: [{
+          ...mockSearchResult.objects[0],
+          package: {
+            ...mockSearchResult.objects[0].package,
+            publisher: { username: 'pilmee' },
+          },
+        }],
+      });
+      const url = await npm.maintainer('pilmee').avatar();
+      expect(url).toBeUndefined();
+    });
+
+    it('passes signal to fetch on avatar()', async () => {
+      mockResponse(mockSearchResult);
+      const controller = new AbortController();
+      await npm.maintainer('pilmee').avatar(controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
     });
   });
 

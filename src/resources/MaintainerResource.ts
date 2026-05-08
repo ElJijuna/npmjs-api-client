@@ -64,20 +64,12 @@ export class MaintainerResource {
    * ```
    */
   async info(signal?: AbortSignal): Promise<NpmUser> {
-    const result = await this.request<NpmSearchResult>(
-      '/-/v1/search',
-      { text: `maintainer:${this.username}`, size: 1 },
-      undefined,
-      signal,
-    );
-    const first: NpmSearchObject | undefined = result.objects[0];
-    const publisher = first?.package.publisher;
+    const publisher = await this.publisher(signal);
     const email = publisher?.email;
 
     return {
       name: publisher?.username ?? this.username,
       email,
-      avatarUrl: email ? await gravatarUrl(email) : undefined,
     };
   }
 
@@ -116,20 +108,36 @@ export class MaintainerResource {
   }
 
   /**
-   * Returns the public avatar URL for this npm user.
+   * Returns the public avatar URL for this npm user when a public email is available.
    *
-   * No API call is made — the URL is derived from the username.
+   * Internally searches for packages by the maintainer, extracts the public
+   * publisher email from the first result, and derives a Gravatar URL.
    *
-   * @returns Avatar image URL served by npmjs.com
+   * `GET /-/v1/search?text=maintainer:{username}&size=1`
+   *
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns Gravatar image URL, or `undefined` when no public email is available
    *
    * @example
    * ```typescript
-   * const url = npm.maintainer('pilmee').avatar();
-   * // 'https://www.npmjs.com/npm-avatar/pilmee'
+   * const url = await npm.maintainer('pilmee').avatar();
+   * // 'https://www.gravatar.com/avatar/...'
    * ```
    */
-  avatar(): string {
-    return `https://www.npmjs.com/npm-avatar/${this.username}`;
+  async avatar(signal?: AbortSignal): Promise<string | undefined> {
+    const publisher = await this.publisher(signal);
+    return publisher?.email ? gravatarUrl(publisher.email) : undefined;
+  }
+
+  private async publisher(signal?: AbortSignal): Promise<NpmSearchObject['package']['publisher']> {
+    const result = await this.request<NpmSearchResult>(
+      '/-/v1/search',
+      { text: `maintainer:${this.username}`, size: 1 },
+      undefined,
+      signal,
+    );
+    const first: NpmSearchObject | undefined = result.objects[0];
+    return first?.package.publisher;
   }
 }
 
