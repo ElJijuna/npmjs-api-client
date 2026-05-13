@@ -15,7 +15,7 @@ TypeScript client for the npm ecosystem. Aggregates data from multiple sources i
 
 | Source | What it provides |
 | --- | --- |
-| [registry.npmjs.org](https://registry.npmjs.org) | Package metadata, versions, dist-tags, search, maintainers |
+| [registry.npmjs.org](https://registry.npmjs.org) | Package metadata, versions, dist-tags, search, maintainers, authenticated user/org data |
 | [api.npmjs.org](https://api.npmjs.org) | Download counts by period, per-day breakdown, version-level stats |
 | [api.npms.io/v2](https://api.npms.io) | Quality, maintenance & popularity scores with detailed evaluation |
 | [packagephobia.com](https://packagephobia.com) | Publish size and full install size including all transitive dependencies |
@@ -42,13 +42,16 @@ import { NpmClient } from 'npmjs-api-client';
 const npm = new NpmClient();
 
 // Private registry with auth token
-const npm = new NpmClient({
+const privateNpm = new NpmClient({
   registryUrl: 'https://my-registry.example.com',
   token:       'my-auth-token',
 });
 
+// Authenticated npm registry APIs
+const authenticatedNpm = new NpmClient({ token: 'npm_...' });
+
 // Custom base URLs per data source
-const npm = new NpmClient({
+const customNpm = new NpmClient({
   npmsApiUrl:       'https://api.npms.io/v2',
   packagephobiaUrl: 'https://packagephobia.com',
   jsdelivrUrl:      'https://data.jsdelivr.com/v1',
@@ -368,6 +371,25 @@ result.objects.forEach(o => console.log(o.package.name, o.package.version));
 const page2 = await npm.maintainer('sindresorhus').packages({ size: 25, from: 25 });
 ```
 
+### User
+
+Authenticated user endpoints require an npm registry token.
+
+```typescript
+const npm = new NpmClient({ token: 'npm_...' });
+
+// Registry user profile document
+const profile = await npm.user('pilmee').get();
+console.log(profile.name, profile.email);
+
+// Package names associated with the user
+const packages = await npm.user('pilmee').packages();
+packages.forEach(name => console.log(name));
+
+// Paginate when the registry supports it
+const page2 = await npm.user('pilmee').packages({ size: 25, from: 25 });
+```
+
 ### Organization
 
 ```typescript
@@ -392,9 +414,9 @@ developers.forEach(username => console.log(username));
 
 ---
 
-## Chainable resource pattern
+## Chainable package resource pattern
 
-Every resource implements `PromiseLike`, so you can **await it directly** or **chain methods**:
+Package resources implement `PromiseLike`, so you can **await them directly** or **chain methods**:
 
 ```typescript
 // Await directly → fetches the packument
@@ -426,6 +448,8 @@ await npm.package('react').version('18.2.0').dependencies(controller.signal);
 await npm.package('react').downloads('last-week', controller.signal);
 await npm.search({ text: 'react' }, controller.signal);
 await npm.maintainer('sindresorhus').packages({}, controller.signal);
+await npm.user('pilmee').get(controller.signal);
+await npm.user('pilmee').packages({}, controller.signal);
 await npm.bulkDownloads(['react', 'vue'], 'last-week', controller.signal);
 await npm.audit(payload, controller.signal);
 await npm.auditQuick(payload, controller.signal);
@@ -499,6 +523,9 @@ import type {
   // Search
   NpmSearchResult, NpmSearchObject, NpmSearchPackage,
   NpmSearchParams, NpmScore, NpmScoreDetail, NpmPackageLinks,
+
+  // User
+  NpmUser, NpmAuthenticatedUser, NpmUserPackages, NpmUserPackagesParams,
 
   // Downloads
   NpmDownloadPoint, NpmDownloadRange, NpmDownloadDay, NpmDownloadPeriod,

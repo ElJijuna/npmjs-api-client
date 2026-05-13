@@ -2,6 +2,7 @@ import { NpmApiError } from './errors/NpmApiError';
 import { PackageResource } from './resources/PackageResource';
 import { MaintainerResource } from './resources/MaintainerResource';
 import { OrgResource } from './resources/OrgResource';
+import { UserResource } from './resources/UserResource';
 import type { NpmSearchResult, NpmSearchParams } from './domain/Search';
 import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod, NpmBulkDownloads } from './domain/Downloads';
 import type { NpmAuditPayload, NpmAuditResult, NpmAuditQuickResult } from './domain/Audit';
@@ -456,6 +457,30 @@ export class NpmClient {
    */
   maintainer(username: string): MaintainerResource {
     return new MaintainerResource(
+      <T>(path: string, params?: Record<string, string | number | boolean>, _baseUrl?: string, signal?: AbortSignal) =>
+        this.request<T>(path, params, 'registry', signal),
+      username,
+    );
+  }
+
+  /**
+   * Returns a {@link UserResource} for a given npm username, providing
+   * authenticated access to the registry user profile and user package list.
+   *
+   * These endpoints require a registry auth token.
+   *
+   * @param username - The npm username (e.g. `'pilmee'`)
+   * @returns A user resource with `get()` and `packages()` methods
+   *
+   * @example
+   * ```typescript
+   * const npm = new NpmClient({ token: 'npm_...' });
+   * const user = await npm.user('pilmee').get();
+   * const packages = await npm.user('pilmee').packages();
+   * ```
+   */
+  user(username: string): UserResource {
+    return new UserResource(
       <T>(path: string, params?: Record<string, string | number | boolean>, _baseUrl?: string, signal?: AbortSignal) =>
         this.request<T>(path, params, 'registry', signal),
       username,
