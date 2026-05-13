@@ -13,6 +13,7 @@ const DEFAULT_PACKAGEPHOBIA_URL = 'https://packagephobia.com';
 const DEFAULT_JSDELIVR_URL = 'https://data.jsdelivr.com/v1';
 const DEFAULT_UNPKG_URL = 'https://unpkg.com';
 const DEFAULT_DEPS_DEV_URL = 'https://api.deps.dev/v3';
+const DEFAULT_TOP_PACKAGES_QUERY = 'keywords:javascript';
 
 /**
  * Payload emitted on every HTTP request made by {@link NpmClient}.
@@ -322,6 +323,10 @@ export class NpmClient {
    * ```
    */
   async search(params: NpmSearchParams, signal?: AbortSignal): Promise<NpmSearchResult> {
+    if (params.text.trim() === '') {
+      throw new TypeError('npm search requires a non-empty text query');
+    }
+
     return this.request<NpmSearchResult>(
       '/-/v1/search',
       params as unknown as Record<string, string | number | boolean>,
@@ -333,9 +338,11 @@ export class NpmClient {
   /**
    * Returns the top packages according to npm search's default ranking.
    *
-   * `GET /-/v1/search?text=&size={n}`
+   * `GET /-/v1/search?text=keywords:javascript&size={n}`
    *
    * The default npm ranking combines quality, popularity, and maintenance.
+   * npm requires a non-empty `text` query, so this helper uses a broad
+   * JavaScript keyword search.
    *
    * @param n - Number of packages to return (default: 20, max: 250)
    * @param signal - Optional `AbortSignal` to cancel the request
@@ -348,46 +355,55 @@ export class NpmClient {
    * ```
    */
   async topPackages(n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
-    return this.search({ text: '', size: n }, signal);
+    return this.search({ text: DEFAULT_TOP_PACKAGES_QUERY, size: n }, signal);
   }
 
   /**
    * Returns top packages ranked by popularity.
    *
-   * `GET /-/v1/search?text=&size={n}&popularity=1&quality=0&maintenance=0`
+   * `GET /-/v1/search?text=keywords:javascript&size={n}&popularity=1&quality=0&maintenance=0`
    *
    * @param n - Number of packages to return (default: 20, max: 250)
    * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Search results including packages, scores, and total count
    */
   async topByPopularity(n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
-    return this.search({ text: '', size: n, popularity: 1, quality: 0, maintenance: 0 }, signal);
+    return this.search(
+      { text: DEFAULT_TOP_PACKAGES_QUERY, size: n, popularity: 1, quality: 0, maintenance: 0 },
+      signal,
+    );
   }
 
   /**
    * Returns top packages ranked by quality.
    *
-   * `GET /-/v1/search?text=&size={n}&quality=1&popularity=0&maintenance=0`
+   * `GET /-/v1/search?text=keywords:javascript&size={n}&quality=1&popularity=0&maintenance=0`
    *
    * @param n - Number of packages to return (default: 20, max: 250)
    * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Search results including packages, scores, and total count
    */
   async topByQuality(n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
-    return this.search({ text: '', size: n, quality: 1, popularity: 0, maintenance: 0 }, signal);
+    return this.search(
+      { text: DEFAULT_TOP_PACKAGES_QUERY, size: n, quality: 1, popularity: 0, maintenance: 0 },
+      signal,
+    );
   }
 
   /**
    * Returns top packages ranked by maintenance.
    *
-   * `GET /-/v1/search?text=&size={n}&maintenance=1&quality=0&popularity=0`
+   * `GET /-/v1/search?text=keywords:javascript&size={n}&maintenance=1&quality=0&popularity=0`
    *
    * @param n - Number of packages to return (default: 20, max: 250)
    * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Search results including packages, scores, and total count
    */
   async topByMaintenance(n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
-    return this.search({ text: '', size: n, maintenance: 1, quality: 0, popularity: 0 }, signal);
+    return this.search(
+      { text: DEFAULT_TOP_PACKAGES_QUERY, size: n, maintenance: 1, quality: 0, popularity: 0 },
+      signal,
+    );
   }
 
   /**

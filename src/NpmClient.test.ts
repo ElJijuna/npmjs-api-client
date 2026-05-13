@@ -92,6 +92,13 @@ describe('NpmClient', () => {
       expect(url).toContain('text=react');
       expect(url).toContain('size=5');
     });
+
+    it('rejects empty search text before calling the registry', async () => {
+      await expect(npm.search({ text: '', size: 5 })).rejects.toThrow(
+        'npm search requires a non-empty text query',
+      );
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
   });
 
   describe('top package helpers', () => {
@@ -106,13 +113,13 @@ describe('NpmClient', () => {
     it('topPackages() uses npm search default ranking', async () => {
       mockResponse({ objects: [], total: 0, time: '' });
       await npm.topPackages(10);
-      expectSearchParams({ text: '', size: '10' });
+      expectSearchParams({ text: 'keywords:javascript', size: '10' });
     });
 
     it('topPackages() defaults to 20 results', async () => {
       mockResponse({ objects: [], total: 0, time: '' });
       await npm.topPackages();
-      expectSearchParams({ text: '', size: '20' });
+      expectSearchParams({ text: 'keywords:javascript', size: '20' });
     });
 
     it('topPackages() passes signal to fetch', async () => {
@@ -128,19 +135,37 @@ describe('NpmClient', () => {
     it('topByPopularity() ranks by popularity only', async () => {
       mockResponse({ objects: [], total: 0, time: '' });
       await npm.topByPopularity(5);
-      expectSearchParams({ text: '', size: '5', popularity: '1', quality: '0', maintenance: '0' });
+      expectSearchParams({
+        text: 'keywords:javascript',
+        size: '5',
+        popularity: '1',
+        quality: '0',
+        maintenance: '0',
+      });
     });
 
     it('topByQuality() ranks by quality only', async () => {
       mockResponse({ objects: [], total: 0, time: '' });
       await npm.topByQuality(5);
-      expectSearchParams({ text: '', size: '5', quality: '1', popularity: '0', maintenance: '0' });
+      expectSearchParams({
+        text: 'keywords:javascript',
+        size: '5',
+        quality: '1',
+        popularity: '0',
+        maintenance: '0',
+      });
     });
 
     it('topByMaintenance() ranks by maintenance only', async () => {
       mockResponse({ objects: [], total: 0, time: '' });
       await npm.topByMaintenance(5);
-      expectSearchParams({ text: '', size: '5', maintenance: '1', quality: '0', popularity: '0' });
+      expectSearchParams({
+        text: 'keywords:javascript',
+        size: '5',
+        maintenance: '1',
+        quality: '0',
+        popularity: '0',
+      });
     });
 
     it('topByKeyword() filters by keyword', async () => {
