@@ -1,3 +1,15 @@
+# [1.8.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.7.0...v1.8.0) (2026-05-13)
+
+
+### Bug Fixes
+
+* prevent empty text query param ([0d128db](https://github.com/ElJijuna/npmjs-api-client/commit/0d128db48799fb99a39faeb5b1d2091b339fb335))
+
+
+### Features
+
+* add authenticated user resource ([3e5b320](https://github.com/ElJijuna/npmjs-api-client/commit/3e5b3205d910ea3b9a600a9caf98fc6d784d9ac2))
+
 # [1.7.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.6.0...v1.7.0) (2026-05-08)
 
 
