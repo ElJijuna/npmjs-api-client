@@ -86,14 +86,15 @@
 
 ---
 
-## Planned: UserResource
+## UserResource
 
 Requires npm registry authentication.
 
 | Method                       | Endpoint                                    | Status |
 | ---------------------------- | ------------------------------------------- | ------ |
-| `get(username)`              | `GET /-/user/org.couchdb.user:{username}`   | ⬜     |
-| `packages(username, params?)` | `GET /-/by-user/{username}`                | ⬜     |
+| `user(username)`             | — chainable                                 | ✅     |
+| `get(signal?)`               | `GET /-/user/org.couchdb.user:{username}`   | ✅     |
+| `packages(params?, signal?)` | `GET /-/by-user/{username}`                 | ✅     |
 
 ---
 
