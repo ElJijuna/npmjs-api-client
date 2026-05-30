@@ -22,7 +22,7 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:client": "npm run build && node test-client/test.js",
-    "bench": "jest --config jest.bench.config.ts --no-coverage"
+    "bench": "NODE_OPTIONS=--expose-gc jest --config jest.bench.config.ts --no-coverage --runInBand"
   },
   "keywords": [
     "npm",

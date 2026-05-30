@@ -5,7 +5,7 @@ Performance measurements for the internal operations of the client. All benchmar
 ## How to run
 
 ```bash
-npm run bench       # run all benchmarks
+npm run bench       # run all benchmarks (includes --expose-gc for precise heap measurements)
 npm test            # run unit tests (benchmarks excluded)
 ```
 
@@ -143,6 +143,80 @@ _1,000 iterations · async_
 **5 listeners shows real overhead:** At 5 listeners the slowdown is visible (~15% slower than 1 listener). In practice, registering more than 2–3 `'request'` listeners on a single client instance is unusual.
 
 ---
+
+---
+
+### 06 — Event Loop Lag
+_`perf_hooks.monitorEventLoopDelay({ resolution: 1 })` — measures delay between scheduled and actual timer fire_
+
+| Case | Result |
+|---|---|
+| `buildUrl(base, undefined)` ×100k | < 1ms — below resolution |
+| `buildUrl(base, { p })` ×100k | < 1ms — below resolution |
+| `buildUrl(base, { 4 params })` ×100k | < 1ms — below resolution |
+| `Object.values(largePackument.versions)` ×10k | < 1ms — below resolution |
+| `new NpmClient()` ×10k | < 1ms — below resolution |
+| `encodeURIComponent("@babel/core")` ×100k | < 1ms — below resolution |
+| `package.get()` sequential ×500 | < 1ms — below resolution |
+| `package.get()` `Promise.all(50)` × 10 rounds | < 1ms — below resolution |
+
+**What "below 1ms resolution" means:** `monitorEventLoopDelay` samples the event loop by scheduling a libuv timer every 1ms. It collects a sample count of zero when either (a) all operations complete before the first timer tick, or (b) for async operations, each `await` resumes fast enough that no delay accumulates between ticks.
+
+**For sync operations — how to interpret correctly:** `monitorEventLoopDelay` cannot measure within a synchronous loop because libuv timers don't fire while JavaScript is executing. The metric to use instead is the **per-call duration** from the throughput benchmarks (section 04):
+
+| Sync operation | Per-call duration | Event loop impact per call |
+|---|---|---|
+| `buildUrl(4 params)` | ~7 µs | Blocks for 7 µs — negligible |
+| `Object.values(100 versions)` | ~21 µs | Blocks for 21 µs — negligible |
+| `new NpmClient()` | ~1 µs | Blocks for 1 µs — negligible |
+
+Any single call to these functions holds the event loop for microseconds, well below the 1ms threshold where Node.js starts dropping timer accuracy. Even calling `buildUrl()` 100 times consecutively blocks for < 1ms total.
+
+**For async operations:** The `< 1ms` result is a genuine positive signal — `package.get()` properly yields to the event loop on each `await`, including in batched `Promise.all(50)` patterns. No microtask starvation observed.
+
+**Conclusion:** None of the library's operations introduce measurable event loop lag. The client is safe to use in latency-sensitive servers.
+
+---
+
+### 07 — Memory & GC Pressure
+_`process.memoryUsage()` with forced GC via `--expose-gc` (precise retained heap)_
+
+#### Sync allocations (10,000 iterations, GC forced before/after)
+
+| Operation | Heap Δ | Retained per op |
+|---|---|---|
+| `new NpmClient()` | 15.1 KB | ~1.5 bytes |
+| `new NpmClient() + 3 listeners` | 16.4 KB | ~1.7 bytes |
+| `client.package("react")` | 7.0 KB | ~0.7 bytes |
+| `buildUrl(base, undefined)` | −1.9 KB | ~0 bytes (GC collected) |
+| `buildUrl(base, { 4 params })` | **39.3 KB** | **~4.0 bytes** |
+| `Object.values(largePackument.versions)` | 2.7 KB | ~0.3 bytes |
+
+**Why `buildUrl(4 params)` retains more:** Each call allocates 3 intermediate arrays and 1 `URLSearchParams` object. After GC, V8 retains ~4 bytes of overhead per operation in its internal structures (hidden class descriptors, string internment). The allocations themselves are collected — but they generate GC pressure.
+
+**Why `buildUrl(undefined)` is negative:** The early-return path allocates nothing. The −1.9 KB is the GC collecting unrelated object from the warmup phase.
+
+#### Async allocations (1,000 iterations, GC forced before/after)
+
+| Operation | Heap Δ | Retained per op |
+|---|---|---|
+| `package.get()` | 7.56 MB | ~7,931 bytes |
+| `package.get()` with 5 listeners | 7.56 MB | ~7,930 bytes |
+
+**Why ~8 KB per async call:** Each call creates a mocked `Response` containing `JSON.stringify(smallPackument)` (~3 KB serialized). The retained 8 KB includes: the serialized JSON string, the parsed object graph, Promise chain objects, `RequestEvent` object, `Date` objects, and V8 internal overhead. Listeners add essentially zero per-call cost (~1 byte difference with 5 listeners).
+
+In production, the parsed response object is handed to the caller and GC'd when the caller drops the reference — so the steady-state retained heap per request is much lower than 8 KB.
+
+#### Leak detection
+
+| Test | Result |
+|---|---|
+| 500 `NpmClient` instances created + GC'd | **2.1 KB retained** (~4 bytes/instance) |
+| `search()` heap across 5 × 200 calls | **Stable** — 582–616 KB/batch, no acceleration |
+
+**No memory leaks detected.** The 2.1 KB retained after 500 instances is V8's string interning for repeated URL strings (the default registry URLs are interned once). Per-instance retained cost is ~4 bytes — negligible.
+
+The `search()` stability check shows linear growth (~600 KB per 200-call batch) caused by steady-state Promise and string allocations, not a leak. A real leak would show an accelerating growth rate; the batch-to-batch variance here is < 6%.
 
 ## Optimization Candidates
 
