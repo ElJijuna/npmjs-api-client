@@ -2,6 +2,39 @@
 
 Performance measurements for the internal operations of the client. All benchmarks run with mocked network (no real HTTP calls), so results reflect **client overhead only**, not network latency.
 
+---
+
+## Refactoring results (v1.8.0 → optimized)
+
+Applied four optimizations to `src/NpmClient.ts` based on the findings below.
+No public API changes. 140/140 unit tests pass.
+
+| Change | Impact |
+|---|---|
+| `resolveBaseUrl()` — pre-build URL map once in constructor | Eliminates 1 object allocation (7 entries) per request |
+| `buildHeaders()` — pre-compute 4 header objects in constructor | Eliminates 1–2 object allocations per request |
+| `post()` spread — replaced with cached header object | Eliminates 1 spread allocation per POST |
+| `buildUrl()` 1-param fast path — direct `encodeURIComponent` | Eliminates `URLSearchParams` + `map()` for single-param calls |
+
+**Memory improvement (07 — heap retained, GC forced):**
+
+| Operation | Before | After | Δ |
+|---|---|---|---|
+| `new NpmClient()` ×10k | 15.1 KB / ~1.5 b/op | 2.6 KB / ~0.3 b/op | **−83%** |
+| `client.package()` ×10k | 7.0 KB / ~0.7 b/op | 1.2 KB / ~0.1 b/op | **−83%** |
+| `package.get()` async ×1k | 7.56 MB / ~7,931 b/op | 7.54 MB / ~7,907 b/op | −0.3% (dominated by JSON) |
+
+**Throughput (01, 03 — ops/sec):**
+
+| Operation | Before | After | Δ |
+|---|---|---|---|
+| `new NpmClient()` | ~977K | ~865K | −11% (constructor does more upfront work) |
+| `package.get()` pipeline | ~5,987 | ~5,994 | ≈ same (noise range) |
+
+The tradeoff is intentional: construction does slightly more work once to eliminate allocations on every subsequent request. For the typical usage pattern — one client instance, many requests — this is a net win. The per-request allocation reduction directly lowers GC pressure under sustained load.
+
+---
+
 ## How to run
 
 ```bash

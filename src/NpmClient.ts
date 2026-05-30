@@ -125,6 +125,11 @@ export class NpmClient {
     keyof NpmClientEvents,
     NpmClientEvents[keyof NpmClientEvents][]
   > = new Map();
+  private readonly baseUrls: Record<string, string>;
+  private readonly headersPublic: Record<string, string>;
+  private readonly headersAuth: Record<string, string>;
+  private readonly headersPostPublic: Record<string, string>;
+  private readonly headersPostAuth: Record<string, string>;
 
   /**
    * @param options - Optional configuration for registry URL, downloads API URL, and auth token
@@ -138,6 +143,23 @@ export class NpmClient {
     this.unpkgUrl = (options.unpkgUrl ?? DEFAULT_UNPKG_URL).replace(/\/$/, '');
     this.depsDevUrl = (options.depsDevUrl ?? DEFAULT_DEPS_DEV_URL).replace(/\/$/, '');
     this.token = options.token;
+    this.baseUrls = {
+      registry: this.registryUrl,
+      downloads: this.downloadsApiUrl,
+      npms: this.npmsApiUrl,
+      packagephobia: this.packagephobiaUrl,
+      jsdelivr: this.jsdelivrUrl,
+      unpkg: this.unpkgUrl,
+      depsdev: this.depsDevUrl,
+    };
+    this.headersPublic = { 'Accept': 'application/json' };
+    this.headersAuth = this.token
+      ? { 'Accept': 'application/json', 'Authorization': `Bearer ${this.token}` }
+      : this.headersPublic;
+    this.headersPostPublic = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    this.headersPostAuth = this.token
+      ? { 'Accept': 'application/json', 'Authorization': `Bearer ${this.token}`, 'Content-Type': 'application/json' }
+      : this.headersPostPublic;
   }
 
   /**
@@ -168,29 +190,6 @@ export class NpmClient {
     }
   }
 
-  private buildHeaders(baseUrl: string): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Accept': 'application/json',
-    };
-    if (this.token && (baseUrl === 'registry' || baseUrl === 'downloads')) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-    return headers;
-  }
-
-  private resolveBaseUrl(key: string): string {
-    const map: Record<string, string> = {
-      registry: this.registryUrl,
-      downloads: this.downloadsApiUrl,
-      npms: this.npmsApiUrl,
-      packagephobia: this.packagephobiaUrl,
-      jsdelivr: this.jsdelivrUrl,
-      unpkg: this.unpkgUrl,
-      depsdev: this.depsDevUrl,
-    };
-    return map[key] ?? this.registryUrl;
-  }
-
   /**
    * Performs a GET request to the specified API.
    *
@@ -206,12 +205,15 @@ export class NpmClient {
     baseUrl = 'registry',
     signal?: AbortSignal,
   ): Promise<T> {
-    const base = this.resolveBaseUrl(baseUrl);
+    const base = this.baseUrls[baseUrl] ?? this.registryUrl;
     const url = buildUrl(`${base}${path}`, params);
     const startedAt = new Date();
     let statusCode: number | undefined;
+    const headers = this.token && (baseUrl === 'registry' || baseUrl === 'downloads')
+      ? this.headersAuth
+      : this.headersPublic;
     try {
-      const response = await fetch(url, { headers: this.buildHeaders(baseUrl), signal });
+      const response = await fetch(url, { headers, signal });
       statusCode = response.status;
       if (!response.ok) {
         throw new NpmApiError(response.status, response.statusText);
@@ -246,7 +248,7 @@ export class NpmClient {
     const url = `${this.registryUrl}${path}`;
     const startedAt = new Date();
     let statusCode: number | undefined;
-    const headers = { ...this.buildHeaders('registry'), 'Content-Type': 'application/json' };
+    const headers = this.token ? this.headersPostAuth : this.headersPostPublic;
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -686,6 +688,10 @@ export function buildUrl(base: string, params?: Record<string, string | number |
   if (!params) return base;
   const entries = Object.entries(params).filter(([, v]) => v !== undefined);
   if (entries.length === 0) return base;
+  if (entries.length === 1) {
+    const [k, v] = entries[0]!;
+    return `${base}?${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`;
+  }
   const search = new URLSearchParams(entries.map(([k, v]) => [k, String(v)]));
   return `${base}?${search.toString()}`;
 }
