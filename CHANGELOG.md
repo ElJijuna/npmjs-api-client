@@ -1,3 +1,16 @@
+## [1.8.1](https://github.com/ElJijuna/npmjs-api-client/compare/v1.8.0...v1.8.1) (2026-05-30)
+
+
+### Bug Fixes
+
+* eliminate per-request allocations in NpmClient ([db9bc00](https://github.com/ElJijuna/npmjs-api-client/commit/db9bc00ed7883f61cb5c99e0d9277099bf9f10c2))
+
+
+### Performance Improvements
+
+* add benchmark suite for detecting optimization hotspots ([4f6804f](https://github.com/ElJijuna/npmjs-api-client/commit/4f6804fd0d1fe068dffcc53f231e36fbd45d2a56))
+* add event loop and memory benchmarks ([0941803](https://github.com/ElJijuna/npmjs-api-client/commit/09418036ac7296fd8aaaee6bb5e613156a40c261))
+
 # [1.8.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.7.0...v1.8.0) (2026-05-13)
 
 
