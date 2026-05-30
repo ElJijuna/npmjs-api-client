@@ -682,7 +682,7 @@ export class NpmClient {
  * Appends query parameters to a URL string, skipping `undefined` values.
  * @internal
  */
-function buildUrl(base: string, params?: Record<string, string | number | boolean>): string {
+export function buildUrl(base: string, params?: Record<string, string | number | boolean>): string {
   if (!params) return base;
   const entries = Object.entries(params).filter(([, v]) => v !== undefined);
   if (entries.length === 0) return base;
