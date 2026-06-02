@@ -13,20 +13,16 @@ function printHistogram(label: string, h: ReturnType<typeof monitorEventLoopDela
   }
   console.log(
     `  ${label}\n` +
-    `    mean ${ns(h.mean)}ms  |  p50 ${ns(h.percentile(50))}ms  p75 ${ns(h.percentile(75))}ms  p99 ${ns(h.percentile(99))}ms  max ${ns(h.max)}ms`,
+      `    mean ${ns(h.mean)}ms  |  p50 ${ns(h.percentile(50))}ms  p75 ${ns(h.percentile(75))}ms  p99 ${ns(h.percentile(99))}ms  max ${ns(h.max)}ms`,
   );
 }
 
-async function measureSync(
-  label: string,
-  fn: () => void,
-  iterations: number,
-): Promise<void> {
+async function measureSync(label: string, fn: () => void, iterations: number): Promise<void> {
   const h = monitorEventLoopDelay({ resolution: 1 });
   h.enable();
   for (let i = 0; i < iterations; i++) fn();
   // yield to let the delay monitor tick before reading
-  await new Promise(resolve => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
   h.disable();
   printHistogram(label, h);
 }
@@ -39,7 +35,7 @@ async function measureAsync(
   const h = monitorEventLoopDelay({ resolution: 1 });
   h.enable();
   for (let i = 0; i < iterations; i++) await fn();
-  await new Promise(resolve => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
   h.disable();
   printHistogram(label, h);
 }
@@ -56,7 +52,9 @@ describe('06 — Event Loop Lag', () => {
   it('buildUrl() no params — tight loop 100k', async () => {
     await measureSync(
       'buildUrl(base, undefined)  ×100k',
-      () => { buildUrl('https://registry.npmjs.org/react'); },
+      () => {
+        buildUrl('https://registry.npmjs.org/react');
+      },
       100_000,
     );
   });
@@ -64,7 +62,9 @@ describe('06 — Event Loop Lag', () => {
   it('buildUrl() 1 param — tight loop 100k', async () => {
     await measureSync(
       'buildUrl(base, { p })  ×100k',
-      () => { buildUrl('https://packagephobia.com/v2/api.json', { p: 'react' }); },
+      () => {
+        buildUrl('https://packagephobia.com/v2/api.json', { p: 'react' });
+      },
       100_000,
     );
   });
@@ -87,7 +87,9 @@ describe('06 — Event Loop Lag', () => {
   it('Object.values(largePackument.versions) — tight loop 10k', async () => {
     await measureSync(
       'Object.values(largePackument.versions)  ×10k  (100 versions each)',
-      () => { Object.values(largePackument.versions); },
+      () => {
+        Object.values(largePackument.versions);
+      },
       10_000,
     );
   });
@@ -95,7 +97,9 @@ describe('06 — Event Loop Lag', () => {
   it('new NpmClient() — tight loop 10k', async () => {
     await measureSync(
       'new NpmClient()  ×10k',
-      () => { new NpmClient(); },
+      () => {
+        new NpmClient();
+      },
       10_000,
     );
   });
@@ -103,7 +107,9 @@ describe('06 — Event Loop Lag', () => {
   it('encodeURIComponent scoped — tight loop 100k', async () => {
     await measureSync(
       'encodeURIComponent("@babel/core")  ×100k',
-      () => { encodeURIComponent('@babel/core'); },
+      () => {
+        encodeURIComponent('@babel/core');
+      },
       100_000,
     );
   });
@@ -111,23 +117,19 @@ describe('06 — Event Loop Lag', () => {
   // --- Async operations — each yields between iterations ---
 
   it('package.get() sequential 500 calls', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      Promise.resolve(makeMockResponse(smallPackument)),
-    );
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() => Promise.resolve(makeMockResponse(smallPackument)));
     const client = new NpmClient();
     const pkg = client.package('react');
-    await measureAsync(
-      'package.get() sequential  ×500',
-      () => pkg.get(),
-      500,
-    );
+    await measureAsync('package.get() sequential  ×500', () => pkg.get(), 500);
     jest.restoreAllMocks();
   });
 
   it('package.get() batched Promise.all(50) × 10 rounds', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      Promise.resolve(makeMockResponse(smallPackument)),
-    );
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() => Promise.resolve(makeMockResponse(smallPackument)));
     const client = new NpmClient();
     const pkg = client.package('react');
     const h = monitorEventLoopDelay({ resolution: 1 });
@@ -135,7 +137,7 @@ describe('06 — Event Loop Lag', () => {
     for (let round = 0; round < 10; round++) {
       await Promise.all(Array.from({ length: 50 }, () => pkg.get()));
     }
-    await new Promise(resolve => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
     h.disable();
     printHistogram('package.get() Promise.all(50) × 10 rounds  (500 total)', h);
     jest.restoreAllMocks();

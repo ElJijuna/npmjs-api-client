@@ -91,7 +91,10 @@ export class MaintainerResource {
    * });
    * ```
    */
-  async packages(params: MaintainerPackagesParams = {}, signal?: AbortSignal): Promise<NpmSearchResult> {
+  async packages(
+    params: MaintainerPackagesParams = {},
+    signal?: AbortSignal,
+  ): Promise<NpmSearchResult> {
     return this.request<NpmSearchResult>(
       '/-/v1/search',
       {
@@ -143,7 +146,12 @@ export class MaintainerResource {
 
 async function gravatarUrl(email: string): Promise<string> {
   const normalizedEmail = email.trim().toLowerCase();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(normalizedEmail));
-  const hash = Array.from(new Uint8Array(hashBuffer), byte => byte.toString(16).padStart(2, '0')).join('');
+  const hashBuffer = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(normalizedEmail),
+  );
+  const hash = Array.from(new Uint8Array(hashBuffer), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('');
   return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=128`;
 }

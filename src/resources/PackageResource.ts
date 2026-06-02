@@ -59,7 +59,12 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * @returns The full packument object
    */
   async get(signal?: AbortSignal): Promise<NpmPackument> {
-    return this.request<NpmPackument>(`/${encodeURIComponent(this.name)}`, undefined, undefined, signal);
+    return this.request<NpmPackument>(
+      `/${encodeURIComponent(this.name)}`,
+      undefined,
+      undefined,
+      signal,
+    );
   }
 
   /**
@@ -152,7 +157,12 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * ```
    */
   async distTags(signal?: AbortSignal): Promise<NpmDistTags> {
-    return this.request<NpmDistTags>(`/-/package/${encodeURIComponent(this.name)}/dist-tags`, undefined, undefined, signal);
+    return this.request<NpmDistTags>(
+      `/-/package/${encodeURIComponent(this.name)}/dist-tags`,
+      undefined,
+      undefined,
+      signal,
+    );
   }
 
   /**
@@ -170,7 +180,10 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * console.log(stats.downloads); // 12345678
    * ```
    */
-  async downloads(period: NpmDownloadPeriod = 'last-month', signal?: AbortSignal): Promise<NpmDownloadPoint> {
+  async downloads(
+    period: NpmDownloadPeriod = 'last-month',
+    signal?: AbortSignal,
+  ): Promise<NpmDownloadPoint> {
     return this.request<NpmDownloadPoint>(
       `/downloads/point/${period}/${encodeURIComponent(this.name)}`,
       undefined,
@@ -194,7 +207,10 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * range.downloads.forEach(d => console.log(d.day, d.downloads));
    * ```
    */
-  async downloadRange(period: NpmDownloadPeriod = 'last-month', signal?: AbortSignal): Promise<NpmDownloadRange> {
+  async downloadRange(
+    period: NpmDownloadPeriod = 'last-month',
+    signal?: AbortSignal,
+  ): Promise<NpmDownloadRange> {
     return this.request<NpmDownloadRange>(
       `/downloads/range/${period}/${encodeURIComponent(this.name)}`,
       undefined,

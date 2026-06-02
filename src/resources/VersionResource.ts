@@ -1,4 +1,8 @@
-import type { NpmVersionDownloadPeriod, NpmVersionDownloadPoint, NpmVersionDownloads } from '../domain/Downloads';
+import type {
+  NpmVersionDownloadPeriod,
+  NpmVersionDownloadPoint,
+  NpmVersionDownloads,
+} from '../domain/Downloads';
 import type { NpmPackageVersion } from '../domain/PackageVersion';
 import type { PackagephobiaSize } from '../domain/Packagephobia';
 import type { JsdelivrStats, JsdelivrGroupBy, JsdelivrPeriod } from '../domain/Jsdelivr';

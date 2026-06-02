@@ -48,7 +48,10 @@ export class UserResource {
    * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Package names associated with the user
    */
-  async packages(params: NpmUserPackagesParams = {}, signal?: AbortSignal): Promise<NpmUserPackages> {
+  async packages(
+    params: NpmUserPackagesParams = {},
+    signal?: AbortSignal,
+  ): Promise<NpmUserPackages> {
     return this.request<NpmUserPackages>(
       `/-/by-user/${encodeURIComponent(this.username)}`,
       {

@@ -7,11 +7,15 @@ describe('02 — Resource Creation', () => {
   const client = new NpmClient();
 
   it('package() — unscoped package name', () => {
-    runBench('client.package("react")', () => { client.package('react'); });
+    runBench('client.package("react")', () => {
+      client.package('react');
+    });
   });
 
   it('package() — scoped package name', () => {
-    runBench('client.package("@babel/core")', () => { client.package('@babel/core'); });
+    runBench('client.package("@babel/core")', () => {
+      client.package('@babel/core');
+    });
   });
 
   it('package().version() — chaining to VersionResource', () => {
@@ -33,10 +37,14 @@ describe('02 — Resource Creation', () => {
   });
 
   it('user() — UserResource creation', () => {
-    runBench('client.user("pilmee")', () => { client.user('pilmee'); });
+    runBench('client.user("pilmee")', () => {
+      client.user('pilmee');
+    });
   });
 
   it('org() — OrgResource creation', () => {
-    runBench('client.org("npmcli")', () => { client.org('npmcli'); });
+    runBench('client.org("npmcli")', () => {
+      client.org('npmcli');
+    });
   });
 });

@@ -9,7 +9,12 @@ export { OrgResource } from './resources/OrgResource';
 export type { MaintainerPackagesParams } from './resources/MaintainerResource';
 export type { NpmUser } from './domain/NpmUser';
 export type { NpmAuthenticatedUser, NpmUserPackages, NpmUserPackagesParams } from './domain/User';
-export type { NpmOrgPackageAccess, NpmOrgPackages, NpmOrgMemberRole, NpmOrgMembers } from './domain/Org';
+export type {
+  NpmOrgPackageAccess,
+  NpmOrgPackages,
+  NpmOrgMemberRole,
+  NpmOrgMembers,
+} from './domain/Org';
 export type { NpmPackument, NpmPerson, NpmRepository } from './domain/Packument';
 export type { NpmPackageVersion, NpmDist } from './domain/PackageVersion';
 export type { NpmDistTags } from './domain/DistTag';
@@ -41,7 +46,12 @@ export type {
   NpmsMaintenanceEvaluation,
 } from './domain/Npms';
 export type { PackagephobiaSize, PackagephobiaSizeInfo } from './domain/Packagephobia';
-export type { JsdelivrStats, JsdelivrVersionEntry, JsdelivrPeriod, JsdelivrGroupBy } from './domain/Jsdelivr';
+export type {
+  JsdelivrStats,
+  JsdelivrVersionEntry,
+  JsdelivrPeriod,
+  JsdelivrGroupBy,
+} from './domain/Jsdelivr';
 export type { UnpkgFile } from './domain/Unpkg';
 export type {
   DepsDevDependencies,

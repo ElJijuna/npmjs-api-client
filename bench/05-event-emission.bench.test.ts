@@ -11,9 +11,9 @@ describe('05 — Event Emission', () => {
   });
 
   beforeEach(() => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      Promise.resolve(makeMockResponse(smallPackument)),
-    );
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() => Promise.resolve(makeMockResponse(smallPackument)));
   });
 
   afterEach(() => {

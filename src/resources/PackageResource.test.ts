@@ -37,12 +37,22 @@ describe('PackageResource', () => {
     });
 
     it('throws NpmApiError on 404', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found', json: jest.fn() });
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        json: jest.fn(),
+      });
       await expect(npm.package('nonexistent-xyz-pkg').get()).rejects.toThrow(NpmApiError);
     });
 
     it('throws NpmApiError with correct status', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found', json: jest.fn() });
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        json: jest.fn(),
+      });
       try {
         await npm.package('nonexistent-xyz-pkg').get();
       } catch (err) {
@@ -124,7 +134,10 @@ describe('PackageResource', () => {
 
     it('throws when version downloads use a period other than last-week', async () => {
       await expect(
-        npm.package('react').version('18.2.0').downloads('last-month' as 'last-week'),
+        npm
+          .package('react')
+          .version('18.2.0')
+          .downloads('last-month' as 'last-week'),
       ).rejects.toThrow(RangeError);
       expect(mockFetch).not.toHaveBeenCalled();
     });
@@ -170,7 +183,12 @@ describe('PackageResource', () => {
 
   describe('downloads()', () => {
     it('fetches download point with default period', async () => {
-      mockResponse({ downloads: 5000000, start: '2024-03-14', end: '2024-04-13', package: 'react' });
+      mockResponse({
+        downloads: 5000000,
+        start: '2024-03-14',
+        end: '2024-04-13',
+        package: 'react',
+      });
       const result = await npm.package('react').downloads();
       expect(result.downloads).toBe(5000000);
       expect(mockFetch).toHaveBeenCalledWith(
@@ -189,7 +207,12 @@ describe('PackageResource', () => {
     });
 
     it('encodes scoped package name in download URL', async () => {
-      mockResponse({ downloads: 100, start: '2024-01-01', end: '2024-01-31', package: '@types/node' });
+      mockResponse({
+        downloads: 100,
+        start: '2024-01-01',
+        end: '2024-01-31',
+        package: '@types/node',
+      });
       await npm.package('@types/node').downloads();
       expect(mockFetch).toHaveBeenCalledWith(
         'https://api.npmjs.org/downloads/point/last-month/%40types%2Fnode',
@@ -229,7 +252,7 @@ describe('PackageResource', () => {
       mockResponse(packument);
       const result = await npm.package('lodash').versions();
       expect(result).toHaveLength(2);
-      expect(result.map(v => v.version)).toEqual(['4.17.20', '4.17.21']);
+      expect(result.map((v) => v.version)).toEqual(['4.17.20', '4.17.21']);
     });
 
     it('returns empty array when no versions', async () => {
@@ -347,8 +370,18 @@ describe('PackageResource', () => {
       score: { final: 0.97, detail: { quality: 0.95, popularity: 0.99, maintenance: 0.98 } },
       evaluation: {
         quality: { carefulness: 0.9, tests: 0.8, health: 1, branding: 0.7 },
-        popularity: { communityInterest: 50000, downloadsCount: 1e8, downloadsAcceleration: 0.1, dependentsCount: 15000 },
-        maintenance: { releasesFrequency: 0.9, commitsFrequency: 0.95, openIssues: 0.8, issuesDistribution: 0.85 },
+        popularity: {
+          communityInterest: 50000,
+          downloadsCount: 1e8,
+          downloadsAcceleration: 0.1,
+          dependentsCount: 15000,
+        },
+        maintenance: {
+          releasesFrequency: 0.9,
+          commitsFrequency: 0.95,
+          openIssues: 0.8,
+          issuesDistribution: 0.85,
+        },
       },
     };
 

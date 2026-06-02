@@ -11,9 +11,9 @@ describe('03 — Request Pipeline (mocked fetch)', () => {
   });
 
   beforeEach(() => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      Promise.resolve(makeMockResponse(smallPackument)),
-    );
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() => Promise.resolve(makeMockResponse(smallPackument)));
   });
 
   afterEach(() => {
@@ -29,7 +29,11 @@ describe('03 — Request Pipeline (mocked fetch)', () => {
   it('package.downloads() — GET to downloads API (different base URL)', async () => {
     const client = new NpmClient();
     const pkg = client.package('react');
-    await runBenchAsync('package.downloads("last-week")', () => pkg.downloads('last-week'), ITERATIONS);
+    await runBenchAsync(
+      'package.downloads("last-week")',
+      () => pkg.downloads('last-week'),
+      ITERATIONS,
+    );
   });
 
   it('package.score() — GET to npms (third-party base URL)', async () => {
@@ -52,17 +56,21 @@ describe('03 — Request Pipeline (mocked fetch)', () => {
 
   it('search() — GET with search params + input validation', async () => {
     const client = new NpmClient();
-    await runBenchAsync('client.search({ text: "react" })', () =>
-      client.search({ text: 'react', size: 20 }).then(() => {}),
-    ITERATIONS);
+    await runBenchAsync(
+      'client.search({ text: "react" })',
+      () => client.search({ text: 'react', size: 20 }).then(() => {}),
+      ITERATIONS,
+    );
   });
 
   it('bulkDownloads() — encode + join of package names', async () => {
     const client = new NpmClient();
     const pkgs = ['react', 'vue', 'angular', '@angular/core', 'svelte'];
-    await runBenchAsync('client.bulkDownloads([5 packages])', () =>
-      client.bulkDownloads(pkgs).then(() => {}),
-    ITERATIONS);
+    await runBenchAsync(
+      'client.bulkDownloads([5 packages])',
+      () => client.bulkDownloads(pkgs).then(() => {}),
+      ITERATIONS,
+    );
   });
 
   it('package.get() — with auth token (header includes Authorization)', async () => {
@@ -73,13 +81,23 @@ describe('03 — Request Pipeline (mocked fetch)', () => {
 
   it('package.get() — error path (non-2xx response)', async () => {
     jest.restoreAllMocks();
-    jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      Promise.resolve(new Response('Not Found', { status: 404, statusText: 'Not Found' })),
-    );
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() =>
+        Promise.resolve(new Response('Not Found', { status: 404, statusText: 'Not Found' })),
+      );
     const client = new NpmClient();
     const pkg = client.package('nonexistent-pkg-xyz');
-    await runBenchAsync('package.get() — 404 error path', async () => {
-      try { await pkg.get(); } catch { /* expected */ }
-    }, ITERATIONS);
+    await runBenchAsync(
+      'package.get() — 404 error path',
+      async () => {
+        try {
+          await pkg.get();
+        } catch {
+          /* expected */
+        }
+      },
+      ITERATIONS,
+    );
   });
 });

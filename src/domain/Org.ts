@@ -9,4 +9,3 @@ export type NpmOrgMemberRole = 'developer' | 'admin' | 'owner';
 
 /** Map of username to org role. */
 export type NpmOrgMembers = Record<string, NpmOrgMemberRole>;
-

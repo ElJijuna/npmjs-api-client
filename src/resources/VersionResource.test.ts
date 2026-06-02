@@ -167,9 +167,24 @@ describe('VersionResource — new methods', () => {
   describe('dependencies()', () => {
     const depsFixture = {
       nodes: [
-        { versionKey: { system: 'NPM', name: 'react', version: '18.2.0' }, bundled: false, relation: 'SELF', errors: [] },
-        { versionKey: { system: 'NPM', name: 'loose-envify', version: '1.4.0' }, bundled: false, relation: 'DIRECT', errors: [] },
-        { versionKey: { system: 'NPM', name: 'js-tokens', version: '4.0.0' }, bundled: false, relation: 'INDIRECT', errors: [] },
+        {
+          versionKey: { system: 'NPM', name: 'react', version: '18.2.0' },
+          bundled: false,
+          relation: 'SELF',
+          errors: [],
+        },
+        {
+          versionKey: { system: 'NPM', name: 'loose-envify', version: '1.4.0' },
+          bundled: false,
+          relation: 'DIRECT',
+          errors: [],
+        },
+        {
+          versionKey: { system: 'NPM', name: 'js-tokens', version: '4.0.0' },
+          bundled: false,
+          relation: 'INDIRECT',
+          errors: [],
+        },
       ],
       edges: [
         { fromNode: 0, toNode: 1, requirement: '^1.1.0' },
@@ -182,7 +197,7 @@ describe('VersionResource — new methods', () => {
       const result = await npm.package('react').version('18.2.0').dependencies();
       expect(result.nodes).toHaveLength(3);
       expect(result.edges).toHaveLength(2);
-      const direct = result.nodes.filter(n => n.relation === 'DIRECT');
+      const direct = result.nodes.filter((n) => n.relation === 'DIRECT');
       expect(direct[0].versionKey.name).toBe('loose-envify');
       expect(direct[0].versionKey.version).toBe('1.4.0');
     });

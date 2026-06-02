@@ -60,7 +60,10 @@ describe('04 — Data Transformation', () => {
   });
 
   it('Object.entries().filter() — param filtering in buildUrl', () => {
-    const params = { text: 'react', size: 20, quality: undefined, popularity: 1 } as Record<string, string | number | undefined>;
+    const params = { text: 'react', size: 20, quality: undefined, popularity: 1 } as Record<
+      string,
+      string | number | undefined
+    >;
     runBench('Object.entries(params).filter(v !== undefined)', () => {
       Object.entries(params).filter(([, v]) => v !== undefined);
     });

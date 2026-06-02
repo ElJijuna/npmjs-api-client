@@ -22,11 +22,7 @@ function formatBytes(n: number): string {
  * With --expose-gc: forces GC before each measurement → precise retained bytes.
  * Without --expose-gc: measures approximate net allocation (GC may have run mid-loop).
  */
-function measureHeap(
-  label: string,
-  fn: () => void,
-  iterations = 10_000,
-): void {
+function measureHeap(label: string, fn: () => void, iterations = 10_000): void {
   // warmup — let JIT compile the path
   for (let i = 0; i < Math.floor(iterations / 10); i++) fn();
   forceGc();
@@ -42,7 +38,7 @@ function measureHeap(
 
   console.log(
     `  ${label}\n` +
-    `    heap Δ ${formatBytes(heapDelta)}  |  ~${bytesPerOp.toFixed(1)} bytes/op${gcAvailable}`,
+      `    heap Δ ${formatBytes(heapDelta)}  |  ~${bytesPerOp.toFixed(1)} bytes/op${gcAvailable}`,
   );
 }
 
@@ -65,7 +61,7 @@ async function measureHeapAsync(
 
   console.log(
     `  ${label}\n` +
-    `    heap Δ ${formatBytes(heapDelta)}  |  ~${bytesPerOp.toFixed(1)} bytes/op${gcAvailable}`,
+      `    heap Δ ${formatBytes(heapDelta)}  |  ~${bytesPerOp.toFixed(1)} bytes/op${gcAvailable}`,
   );
 }
 
@@ -80,7 +76,9 @@ describe('07 — Memory & GC Pressure', () => {
   // --- Sync allocations ---
 
   it('new NpmClient() — heap per construction', () => {
-    measureHeap('new NpmClient()  ×10k', () => { new NpmClient(); });
+    measureHeap('new NpmClient()  ×10k', () => {
+      new NpmClient();
+    });
   });
 
   it('new NpmClient() with listeners — retained after on()', () => {
@@ -94,43 +92,40 @@ describe('07 — Memory & GC Pressure', () => {
 
   it('client.package() — resource creation heap cost', () => {
     const client = new NpmClient();
-    measureHeap('client.package("react")  ×10k', () => { client.package('react'); });
+    measureHeap('client.package("react")  ×10k', () => {
+      client.package('react');
+    });
   });
 
   it('buildUrl() no params — heap per call', () => {
-    measureHeap(
-      'buildUrl(base, undefined)  ×10k',
-      () => { buildUrl('https://registry.npmjs.org/react'); },
-    );
+    measureHeap('buildUrl(base, undefined)  ×10k', () => {
+      buildUrl('https://registry.npmjs.org/react');
+    });
   });
 
   it('buildUrl() 4 params — heap per call', () => {
-    measureHeap(
-      'buildUrl(base, { text, size, quality, popularity })  ×10k',
-      () => {
-        buildUrl('https://registry.npmjs.org/-/v1/search', {
-          text: 'react state management',
-          size: 20,
-          quality: 0.5,
-          popularity: 1,
-        });
-      },
-    );
+    measureHeap('buildUrl(base, { text, size, quality, popularity })  ×10k', () => {
+      buildUrl('https://registry.npmjs.org/-/v1/search', {
+        text: 'react state management',
+        size: 20,
+        quality: 0.5,
+        popularity: 1,
+      });
+    });
   });
 
   it('Object.values(largePackument.versions) — heap per call (100 versions)', () => {
-    measureHeap(
-      'Object.values(largePackument.versions)  ×10k',
-      () => { Object.values(largePackument.versions); },
-    );
+    measureHeap('Object.values(largePackument.versions)  ×10k', () => {
+      Object.values(largePackument.versions);
+    });
   });
 
   // --- Async allocations ---
 
   it('package.get() — heap per request', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      Promise.resolve(makeMockResponse(smallPackument)),
-    );
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() => Promise.resolve(makeMockResponse(smallPackument)));
     const client = new NpmClient();
     const pkg = client.package('react');
     await measureHeapAsync('package.get()  ×1k', () => pkg.get());
@@ -138,9 +133,9 @@ describe('07 — Memory & GC Pressure', () => {
   });
 
   it('package.get() with 5 listeners — heap per request', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      Promise.resolve(makeMockResponse(smallPackument)),
-    );
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() => Promise.resolve(makeMockResponse(smallPackument)));
     const client = new NpmClient();
     for (let i = 0; i < 5; i++) client.on('request', () => {});
     const pkg = client.package('react');
@@ -168,8 +163,8 @@ describe('07 — Memory & GC Pressure', () => {
 
     console.log(
       `  NpmClient leak check  (${INSTANCES} instances created + GC'd)\n` +
-      `    retained after GC: ${formatBytes(retained)}` +
-      (gc ? '' : '  (approx — run with --expose-gc for precision)'),
+        `    retained after GC: ${formatBytes(retained)}` +
+        (gc ? '' : '  (approx — run with --expose-gc for precision)'),
     );
 
     // If more than 1 KB per instance is retained, something isn't being released.
@@ -179,9 +174,11 @@ describe('07 — Memory & GC Pressure', () => {
   });
 
   it('repeated search() calls do not grow heap unboundedly', async () => {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
-      Promise.resolve(makeMockResponse({ objects: [], total: 0, time: '' })),
-    );
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() =>
+        Promise.resolve(makeMockResponse({ objects: [], total: 0, time: '' })),
+      );
     const client = new NpmClient();
 
     forceGc();
@@ -208,10 +205,10 @@ describe('07 — Memory & GC Pressure', () => {
 
     console.log(
       `  search() heap growth across 5×200 calls\n` +
-      `    snapshots: ${snapshots.map(n => formatBytes(n)).join(' → ')}\n` +
-      `    net growth first→last: ${formatBytes(totalGrowth)}\n` +
-      `    growth per batch (batches 2–5): min ${formatBytes(minBatchGrowth)}  max ${formatBytes(maxBatchGrowth)}\n` +
-      `    verdict: ${maxBatchGrowth < minBatchGrowth * 4 + 200_000 ? '✓ stable (linear growth, no leak)' : '⚠ accelerating growth (possible leak)'}`,
+        `    snapshots: ${snapshots.map((n) => formatBytes(n)).join(' → ')}\n` +
+        `    net growth first→last: ${formatBytes(totalGrowth)}\n` +
+        `    growth per batch (batches 2–5): min ${formatBytes(minBatchGrowth)}  max ${formatBytes(maxBatchGrowth)}\n` +
+        `    verdict: ${maxBatchGrowth < minBatchGrowth * 4 + 200_000 ? '✓ stable (linear growth, no leak)' : '⚠ accelerating growth (possible leak)'}`,
     );
 
     // A real leak would show ACCELERATING growth (each batch worse than the previous).

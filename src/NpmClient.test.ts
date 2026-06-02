@@ -224,7 +224,12 @@ describe('NpmClient', () => {
     });
 
     it('emits request events with error on failed requests', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found', json: jest.fn() });
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        json: jest.fn(),
+      });
       const events: unknown[] = [];
       npm.on('request', (e) => events.push(e));
       await expect(npm.package('nonexistent-xyz').get()).rejects.toThrow(NpmApiError);
@@ -276,7 +281,9 @@ describe('NpmClient', () => {
       const controller = new AbortController();
       const events: unknown[] = [];
       npm.on('request', (e) => events.push(e));
-      await expect(npm.search({ text: 'react' }, controller.signal)).rejects.toThrow('The operation was aborted.');
+      await expect(npm.search({ text: 'react' }, controller.signal)).rejects.toThrow(
+        'The operation was aborted.',
+      );
       expect(events).toHaveLength(1);
       const event = events[0] as { error: Error };
       expect(event.error).toBeInstanceOf(Error);
@@ -334,7 +341,9 @@ describe('NpmClient', () => {
           overview: 'Lodash versions prior to 4.17.21 are vulnerable to prototype pollution.',
           cves: ['CVE-2021-23337'],
           cwe: 'CWE-78',
-          findings: [{ version: '4.17.11', paths: ['lodash'], dev: false, optional: false, bundled: false }],
+          findings: [
+            { version: '4.17.11', paths: ['lodash'], dev: false, optional: false, bundled: false },
+          ],
           created: '2021-01-01T00:00:00.000Z',
           updated: '2021-06-01T00:00:00.000Z',
         },
@@ -384,7 +393,7 @@ describe('NpmClient', () => {
     it('emits a request event with method POST', async () => {
       mockResponse(auditResultFixture);
       const events: unknown[] = [];
-      npm.on('request', e => events.push(e));
+      npm.on('request', (e) => events.push(e));
       await npm.audit(payload);
       const event = events[0] as { method: string; url: string };
       expect(event.method).toBe('POST');
@@ -392,7 +401,12 @@ describe('NpmClient', () => {
     });
 
     it('throws NpmApiError on non-2xx response', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: false, status: 400, statusText: 'Bad Request', json: jest.fn() });
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        json: jest.fn(),
+      });
       await expect(npm.audit(payload)).rejects.toThrow(NpmApiError);
     });
 
@@ -446,7 +460,14 @@ describe('NpmClient', () => {
     });
 
     it('encodes scoped package names', async () => {
-      mockResponse({ '@types/node': { downloads: 100, start: '2024-03-14', end: '2024-04-13', package: '@types/node' } });
+      mockResponse({
+        '@types/node': {
+          downloads: 100,
+          start: '2024-03-14',
+          end: '2024-04-13',
+          package: '@types/node',
+        },
+      });
       await npm.bulkDownloads(['@types/node']);
       expect(mockFetch).toHaveBeenCalledWith(
         'https://api.npmjs.org/downloads/point/last-month/%40types%2Fnode',
@@ -473,7 +494,12 @@ describe('NpmClient', () => {
     });
 
     it('throws NpmApiError on non-2xx response', async () => {
-      mockFetch.mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found', json: jest.fn() });
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        json: jest.fn(),
+      });
       await expect(npm.bulkDownloads(['nonexistent-xyz'])).rejects.toThrow(NpmApiError);
     });
   });

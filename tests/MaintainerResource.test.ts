@@ -54,13 +54,15 @@ describe('MaintainerResource', () => {
     it('extracts publisher profile from search result', async () => {
       mockResponse({
         ...mockSearchResult,
-        objects: [{
-          ...mockSearchResult.objects[0],
-          package: {
-            ...mockSearchResult.objects[0].package,
-            publisher: { username: 'pilmee', email: 'pilmee@gmail.com' },
+        objects: [
+          {
+            ...mockSearchResult.objects[0],
+            package: {
+              ...mockSearchResult.objects[0].package,
+              publisher: { username: 'pilmee', email: 'pilmee@gmail.com' },
+            },
           },
-        }],
+        ],
       });
       const profile = await npm.maintainer('pilmee').info();
       expect(profile.name).toBe('pilmee');
@@ -84,13 +86,15 @@ describe('MaintainerResource', () => {
     it('returns email as undefined when publisher has none', async () => {
       mockResponse({
         ...mockSearchResult,
-        objects: [{
-          ...mockSearchResult.objects[0],
-          package: {
-            ...mockSearchResult.objects[0].package,
-            publisher: { username: 'pilmee' },
+        objects: [
+          {
+            ...mockSearchResult.objects[0],
+            package: {
+              ...mockSearchResult.objects[0].package,
+              publisher: { username: 'pilmee' },
+            },
           },
-        }],
+        ],
       });
       const profile = await npm.maintainer('pilmee').info();
       expect(profile.email).toBeUndefined();
@@ -154,13 +158,15 @@ describe('MaintainerResource', () => {
     it('returns a Gravatar URL derived from the public publisher email', async () => {
       mockResponse({
         ...mockSearchResult,
-        objects: [{
-          ...mockSearchResult.objects[0],
-          package: {
-            ...mockSearchResult.objects[0].package,
-            publisher: { username: 'pilmee', email: 'pilmee@gmail.com' },
+        objects: [
+          {
+            ...mockSearchResult.objects[0],
+            package: {
+              ...mockSearchResult.objects[0].package,
+              publisher: { username: 'pilmee', email: 'pilmee@gmail.com' },
+            },
           },
-        }],
+        ],
       });
       const url = await npm.maintainer('pilmee').avatar();
       expect(url).toBe(
@@ -171,13 +177,15 @@ describe('MaintainerResource', () => {
     it('returns undefined when no public email is available', async () => {
       mockResponse({
         ...mockSearchResult,
-        objects: [{
-          ...mockSearchResult.objects[0],
-          package: {
-            ...mockSearchResult.objects[0].package,
-            publisher: { username: 'pilmee' },
+        objects: [
+          {
+            ...mockSearchResult.objects[0],
+            package: {
+              ...mockSearchResult.objects[0].package,
+              publisher: { username: 'pilmee' },
+            },
           },
-        }],
+        ],
       });
       const url = await npm.maintainer('pilmee').avatar();
       expect(url).toBeUndefined();

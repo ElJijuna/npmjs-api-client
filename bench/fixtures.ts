@@ -13,7 +13,8 @@ function makeVersion(name: string, version: string): NpmPackageVersion {
     dist: {
       tarball: `https://registry.npmjs.org/${name}/-/${name}-${version}.tgz`,
       shasum: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
-      integrity: 'sha512-abc123def456abc123def456abc123def456abc123def456abc123def456abc123def456==',
+      integrity:
+        'sha512-abc123def456abc123def456abc123def456abc123def456abc123def456abc123def456==',
       fileCount: 8,
       unpackedSize: 20_480,
     },
@@ -49,7 +50,10 @@ function makePackument(name: string, versionCount: number): NpmPackument {
   return {
     name,
     description: `Benchmark fixture package with ${versionCount} versions`,
-    'dist-tags': { latest: latestVer, beta: `${Math.floor((versionCount - 1) / 10)}.${(versionCount - 1) % 10}.0` },
+    'dist-tags': {
+      latest: latestVer,
+      beta: `${Math.floor((versionCount - 1) / 10)}.${(versionCount - 1) % 10}.0`,
+    },
     versions,
     time,
     maintainers: [

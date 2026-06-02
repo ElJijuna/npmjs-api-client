@@ -4,7 +4,12 @@ import { MaintainerResource } from './resources/MaintainerResource';
 import { OrgResource } from './resources/OrgResource';
 import { UserResource } from './resources/UserResource';
 import type { NpmSearchResult, NpmSearchParams } from './domain/Search';
-import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod, NpmBulkDownloads } from './domain/Downloads';
+import type {
+  NpmDownloadPoint,
+  NpmDownloadRange,
+  NpmDownloadPeriod,
+  NpmBulkDownloads,
+} from './domain/Downloads';
 import type { NpmAuditPayload, NpmAuditResult, NpmAuditQuickResult } from './domain/Audit';
 
 const DEFAULT_REGISTRY_URL = 'https://registry.npmjs.org';
@@ -121,10 +126,8 @@ export class NpmClient {
   private readonly unpkgUrl: string;
   private readonly depsDevUrl: string;
   private readonly token?: string;
-  private readonly listeners: Map<
-    keyof NpmClientEvents,
-    NpmClientEvents[keyof NpmClientEvents][]
-  > = new Map();
+  private readonly listeners: Map<keyof NpmClientEvents, NpmClientEvents[keyof NpmClientEvents][]> =
+    new Map();
   private readonly baseUrls: Record<string, string>;
   private readonly headersPublic: Record<string, string>;
   private readonly headersAuth: Record<string, string>;
@@ -138,7 +141,10 @@ export class NpmClient {
     this.registryUrl = (options.registryUrl ?? DEFAULT_REGISTRY_URL).replace(/\/$/, '');
     this.downloadsApiUrl = (options.downloadsApiUrl ?? DEFAULT_DOWNLOADS_URL).replace(/\/$/, '');
     this.npmsApiUrl = (options.npmsApiUrl ?? DEFAULT_NPMS_URL).replace(/\/$/, '');
-    this.packagephobiaUrl = (options.packagephobiaUrl ?? DEFAULT_PACKAGEPHOBIA_URL).replace(/\/$/, '');
+    this.packagephobiaUrl = (options.packagephobiaUrl ?? DEFAULT_PACKAGEPHOBIA_URL).replace(
+      /\/$/,
+      '',
+    );
     this.jsdelivrUrl = (options.jsdelivrUrl ?? DEFAULT_JSDELIVR_URL).replace(/\/$/, '');
     this.unpkgUrl = (options.unpkgUrl ?? DEFAULT_UNPKG_URL).replace(/\/$/, '');
     this.depsDevUrl = (options.depsDevUrl ?? DEFAULT_DEPS_DEV_URL).replace(/\/$/, '');
@@ -152,13 +158,17 @@ export class NpmClient {
       unpkg: this.unpkgUrl,
       depsdev: this.depsDevUrl,
     };
-    this.headersPublic = { 'Accept': 'application/json' };
+    this.headersPublic = { Accept: 'application/json' };
     this.headersAuth = this.token
-      ? { 'Accept': 'application/json', 'Authorization': `Bearer ${this.token}` }
+      ? { Accept: 'application/json', Authorization: `Bearer ${this.token}` }
       : this.headersPublic;
-    this.headersPostPublic = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+    this.headersPostPublic = { Accept: 'application/json', 'Content-Type': 'application/json' };
     this.headersPostAuth = this.token
-      ? { 'Accept': 'application/json', 'Authorization': `Bearer ${this.token}`, 'Content-Type': 'application/json' }
+      ? {
+        Accept: 'application/json',
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      }
       : this.headersPostPublic;
   }
 
@@ -209,16 +219,17 @@ export class NpmClient {
     const url = buildUrl(`${base}${path}`, params);
     const startedAt = new Date();
     let statusCode: number | undefined;
-    const headers = this.token && (baseUrl === 'registry' || baseUrl === 'downloads')
-      ? this.headersAuth
-      : this.headersPublic;
+    const headers =
+      this.token && (baseUrl === 'registry' || baseUrl === 'downloads')
+        ? this.headersAuth
+        : this.headersPublic;
     try {
       const response = await fetch(url, { headers, signal });
       statusCode = response.status;
       if (!response.ok) {
         throw new NpmApiError(response.status, response.statusText);
       }
-      const data = await response.json() as T;
+      const data = (await response.json()) as T;
       this.emit('request', {
         url,
         method: 'GET',
@@ -260,7 +271,7 @@ export class NpmClient {
       if (!response.ok) {
         throw new NpmApiError(response.status, response.statusText);
       }
-      const data = await response.json() as T;
+      const data = (await response.json()) as T;
       this.emit('request', {
         url,
         method: 'POST',
@@ -304,7 +315,12 @@ export class NpmClient {
    */
   package(name: string): PackageResource {
     return new PackageResource(
-      <T>(path: string, params?: Record<string, string | number | boolean>, baseUrl?: string, signal?: AbortSignal) =>
+      <T>(
+        path: string,
+        params?: Record<string, string | number | boolean>,
+        baseUrl?: string,
+        signal?: AbortSignal,
+      ) =>
         this.request<T>(path, params, (baseUrl as 'registry' | 'downloads') ?? 'registry', signal),
       name,
     );
@@ -459,8 +475,12 @@ export class NpmClient {
    */
   maintainer(username: string): MaintainerResource {
     return new MaintainerResource(
-      <T>(path: string, params?: Record<string, string | number | boolean>, _baseUrl?: string, signal?: AbortSignal) =>
-        this.request<T>(path, params, 'registry', signal),
+      <T>(
+        path: string,
+        params?: Record<string, string | number | boolean>,
+        _baseUrl?: string,
+        signal?: AbortSignal,
+      ) => this.request<T>(path, params, 'registry', signal),
       username,
     );
   }
@@ -483,8 +503,12 @@ export class NpmClient {
    */
   user(username: string): UserResource {
     return new UserResource(
-      <T>(path: string, params?: Record<string, string | number | boolean>, _baseUrl?: string, signal?: AbortSignal) =>
-        this.request<T>(path, params, 'registry', signal),
+      <T>(
+        path: string,
+        params?: Record<string, string | number | boolean>,
+        _baseUrl?: string,
+        signal?: AbortSignal,
+      ) => this.request<T>(path, params, 'registry', signal),
       username,
     );
   }
@@ -507,8 +531,12 @@ export class NpmClient {
    */
   org(org: string): OrgResource {
     return new OrgResource(
-      <T>(path: string, params?: Record<string, string | number | boolean>, _baseUrl?: string, signal?: AbortSignal) =>
-        this.request<T>(path, params, 'registry', signal),
+      <T>(
+        path: string,
+        params?: Record<string, string | number | boolean>,
+        _baseUrl?: string,
+        signal?: AbortSignal,
+      ) => this.request<T>(path, params, 'registry', signal),
       org,
     );
   }

@@ -15,7 +15,7 @@ async function test() {
 
   // Current maintainers
   const maintainers = await npm.package('typescript').maintainers();
-  console.log('Maintainers:', maintainers.map(m => `${m.name} <${m.email}>`).join(', '));
+  console.log('Maintainers:', maintainers.map((m) => `${m.name} <${m.email}>`).join(', '));
 
   // Dist-tags
   const tags = await npm.package('typescript').distTags();
@@ -67,7 +67,7 @@ async function test() {
   // File tree — unpkg
   const files = await npm.package('typescript').version('5.0.2').files();
   console.log('File tree root type:', files.type);
-  console.log('Top-level entries:', files.files?.map(f => f.path).join(', '));
+  console.log('Top-level entries:', files.files?.map((f) => f.path).join(', '));
 
   // CDN stats at version level (by file)
   const versionCdn = await npm.package('typescript').version('5.0.2').cdnStats();
@@ -76,7 +76,9 @@ async function test() {
   // Resolved dependency graph — deps.dev
   const deps = await npm.package('typescript').version('5.0.2').dependencies();
   console.log('Dependency nodes:', deps.nodes.length);
-  deps.nodes.forEach(n => console.log(` - [${n.relation}] ${n.versionKey.name}@${n.versionKey.version}`));
+  deps.nodes.forEach((n) =>
+    console.log(` - [${n.relation}] ${n.versionKey.name}@${n.versionKey.version}`),
+  );
 
   // --- NpmClient convenience methods ---
 
@@ -96,7 +98,7 @@ async function test() {
 
   const results = await npm.search({ text: 'typescript client', size: 3 });
   console.log('Search results:');
-  results.objects.forEach(o => console.log(' -', o.package.name, o.package.version));
+  results.objects.forEach((o) => console.log(' -', o.package.name, o.package.version));
 
   // --- MaintainerResource ---
 
@@ -105,7 +107,7 @@ async function test() {
 
   const maintained = await npm.maintainer('pilmee').packages({ size: 7 });
   console.log(`Maintainer pilmee — ${maintained.total} packages:`);
-  maintained.objects.forEach(o => console.log(' -', o.package.name, o.package.version));
+  maintained.objects.forEach((o) => console.log(' -', o.package.name, o.package.version));
 
   // --- Audit ---
 
@@ -114,7 +116,11 @@ async function test() {
     version: '1.0.0',
     requires: { lodash: '^4.17.11' },
     dependencies: {
-      lodash: { version: '4.17.11', integrity: 'sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZhrCAtcxWrZhAjYviQ==' },
+      lodash: {
+        version: '4.17.11',
+        integrity:
+          'sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZhrCAtcxWrZhAjYviQ==',
+      },
     },
   };
 

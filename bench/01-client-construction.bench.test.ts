@@ -5,7 +5,9 @@ describe('01 — Client Construction', () => {
   beforeAll(() => console.log('\n01 — Client Construction'));
 
   it('new NpmClient() — defaults', () => {
-    runBench('new NpmClient() (defaults)', () => { new NpmClient(); });
+    runBench('new NpmClient() (defaults)', () => {
+      new NpmClient();
+    });
   });
 
   it('new NpmClient({ token }) — with auth token', () => {
