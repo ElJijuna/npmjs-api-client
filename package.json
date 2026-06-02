@@ -18,7 +18,12 @@
   ],
   "scripts": {
     "build": "tsup",
+    "check": "npm run lint && npm test",
     "docs": "typedoc",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:client": "npm run build && node test-client/test.js",
@@ -43,11 +48,14 @@
     "url": "https://github.com/ElJijuna/npmjs-api-client.git"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/jest": "^30.0.0",
+    "eslint": "^9.39.4",
     "jest": "^30.4.2",
     "semantic-release": "^25.0.3",
+    "super-configs": "^1.5.0",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.1",
