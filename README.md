@@ -10,7 +10,7 @@
 [![npm downloads/month](https://img.shields.io/npm/dm/npmjs-api-client)](https://www.npmjs.com/package/npmjs-api-client)
 [![Bundle size](https://img.shields.io/bundlephobia/minzip/npmjs-api-client)](https://bundlephobia.com/package/npmjs-api-client)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.x-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/node/v/npmjs-api-client)](https://nodejs.org/)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://semver.org)
 
