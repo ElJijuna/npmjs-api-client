@@ -504,6 +504,49 @@ describe('NpmClient', () => {
     });
   });
 
+  describe('whoami()', () => {
+    it('calls GET /-/whoami on the registry', async () => {
+      const client = new NpmClient({ token: 'npm_secret' });
+      mockResponse({ username: 'pilmee' });
+      const result = await client.whoami();
+      expect(result.username).toBe('pilmee');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://registry.npmjs.org/-/whoami',
+        expect.any(Object),
+      );
+    });
+
+    it('sends Authorization header with token', async () => {
+      const client = new NpmClient({ token: 'npm_secret' });
+      mockResponse({ username: 'pilmee' });
+      await client.whoami();
+      const headers = mockFetch.mock.calls[0][1].headers as Record<string, string>;
+      expect(headers['Authorization']).toBe('Bearer npm_secret');
+    });
+
+    it('throws NpmApiError on 401', async () => {
+      const client = new NpmClient({ token: 'npm_invalid' });
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: jest.fn(),
+      });
+      await expect(client.whoami()).rejects.toThrow(NpmApiError);
+    });
+
+    it('passes signal to fetch', async () => {
+      const client = new NpmClient({ token: 'npm_secret' });
+      mockResponse({ username: 'pilmee' });
+      const controller = new AbortController();
+      await client.whoami(controller.signal);
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+  });
+
   describe('auditQuick()', () => {
     const payload = {
       name: 'my-app',

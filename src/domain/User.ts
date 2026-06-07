@@ -44,3 +44,11 @@ export interface NpmUserPackagesParams {
  * Package names associated with an authenticated npm user.
  */
 export type NpmUserPackages = string[];
+
+/**
+ * Response from the npm registry whoami endpoint.
+ */
+export interface NpmWhoami {
+  /** The username associated with the auth token */
+  username: string;
+}

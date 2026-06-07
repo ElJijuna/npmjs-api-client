@@ -1,5 +1,9 @@
 # npmjs-api-client
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/npm/logos/master/npm%20logo/npm-logo-red.png" alt="npm logo" width="120" />
+</p>
+
 [![CI](https://github.com/ElJijuna/npmjs-api-client/actions/workflows/ci.yml/badge.svg)](https://github.com/ElJijuna/npmjs-api-client/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/npmjs-api-client)](https://www.npmjs.com/package/npmjs-api-client)
 [![npm downloads/week](https://img.shields.io/npm/dw/npmjs-api-client)](https://www.npmjs.com/package/npmjs-api-client)
@@ -8,6 +12,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/node/v/npmjs-api-client)](https://nodejs.org/)
+[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://semver.org)
 
 TypeScript client for the npm ecosystem. Aggregates data from multiple sources into a single, chainable API — package metadata, download stats, quality scores, install size, CDN usage, file contents, and resolved dependency graphs. Works in **Node.js** and the **browser** (isomorphic). Fully typed, zero runtime dependencies.
 
@@ -378,6 +383,10 @@ Authenticated user endpoints require an npm registry token.
 ```typescript
 const npm = new NpmClient({ token: 'npm_...' });
 
+// Validate a token and discover which account it belongs to
+const { username } = await npm.whoami();
+console.log(username); // 'pilmee'
+
 // Registry user profile document
 const profile = await npm.user('pilmee').get();
 console.log(profile.name, profile.email);
@@ -453,6 +462,7 @@ await npm.user('pilmee').packages({}, controller.signal);
 await npm.bulkDownloads(['react', 'vue'], 'last-week', controller.signal);
 await npm.audit(payload, controller.signal);
 await npm.auditQuick(payload, controller.signal);
+await npm.whoami(controller.signal);
 ```
 
 When aborted, `fetch` throws a `DOMException` with `name === 'AbortError'`. The `request` event is still emitted with the error attached.
@@ -525,7 +535,7 @@ import type {
   NpmSearchParams, NpmScore, NpmScoreDetail, NpmPackageLinks,
 
   // User
-  NpmUser, NpmAuthenticatedUser, NpmUserPackages, NpmUserPackagesParams,
+  NpmUser, NpmAuthenticatedUser, NpmUserPackages, NpmUserPackagesParams, NpmWhoami,
 
   // Downloads
   NpmDownloadPoint, NpmDownloadRange, NpmDownloadDay, NpmDownloadPeriod,

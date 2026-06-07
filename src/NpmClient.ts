@@ -11,6 +11,7 @@ import type {
   NpmBulkDownloads,
 } from './domain/Downloads';
 import type { NpmAuditPayload, NpmAuditResult, NpmAuditQuickResult } from './domain/Audit';
+import type { NpmWhoami } from './domain/User';
 
 const DEFAULT_REGISTRY_URL = 'https://registry.npmjs.org';
 const DEFAULT_DOWNLOADS_URL = 'https://api.npmjs.org';
@@ -632,6 +633,31 @@ export class NpmClient {
       'downloads',
       signal,
     );
+  }
+
+  /**
+   * Returns the npm username associated with the configured auth token.
+   *
+   * Useful for validating a token and discovering which account it belongs to
+   * without knowing the username in advance.
+   *
+   * `GET /-/whoami`
+   *
+   * Requires a registry auth token — throws {@link NpmApiError} with status 401
+   * if no token is set or the token is invalid.
+   *
+   * @param signal - Optional `AbortSignal` to cancel the request
+   * @returns The username associated with the token
+   *
+   * @example
+   * ```typescript
+   * const npm = new NpmClient({ token: 'npm_...' });
+   * const { username } = await npm.whoami();
+   * console.log(username); // 'pilmee'
+   * ```
+   */
+  async whoami(signal?: AbortSignal): Promise<NpmWhoami> {
+    return this.request<NpmWhoami>('/-/whoami', undefined, 'registry', signal);
   }
 
   /**

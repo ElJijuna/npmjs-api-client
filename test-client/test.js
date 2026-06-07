@@ -100,6 +100,12 @@ async function test() {
   console.log('Search results:');
   results.objects.forEach((o) => console.log(' -', o.package.name, o.package.version));
 
+  // --- User (requires token) ---
+
+  // const authedNpm = new NpmClient({ token: 'npm_...' });
+  // const { username } = await authedNpm.whoami();
+  // console.log('whoami:', username);
+
   // --- MaintainerResource ---
 
   const maintainerInfo = await npm.maintainer('pilmee').info();
