@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.8.1...v1.9.0) (2026-06-07)
+
+
+### Features
+
+* add whoami method to NpmClient for user validation and update README and tests ([831488c](https://github.com/ElJijuna/npmjs-api-client/commit/831488cdf954d28d2b1af0f8373f016edb32a474))
+
 ## [1.8.1](https://github.com/ElJijuna/npmjs-api-client/compare/v1.8.0...v1.8.1) (2026-05-30)
 
 
