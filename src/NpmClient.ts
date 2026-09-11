@@ -1,3 +1,4 @@
+import type { ApiProvider } from './resources/types';
 import { NpmApiError } from './errors/NpmApiError';
 import { PackageResource } from './resources/PackageResource';
 import { MaintainerResource } from './resources/MaintainerResource';
@@ -123,7 +124,7 @@ export class NpmClient {
   private readonly token?: string;
   private readonly listeners: Map<keyof NpmClientEvents, NpmClientEvents[keyof NpmClientEvents][]> =
     new Map();
-  private readonly baseUrls: Record<string, string>;
+  private readonly baseUrls: Record<ApiProvider, string>;
   private readonly headersPublic: Record<string, string>;
   private readonly headersAuth: Record<string, string>;
   private readonly headersPostPublic: Record<string, string>;
@@ -158,15 +159,17 @@ export class NpmClient {
     this.headersPostPublic = { Accept: 'application/json', 'Content-Type': 'application/json' };
     this.headersPostAuth = this.token
       ? {
-          Accept: 'application/json',
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        }
+        Accept: 'application/json',
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      }
       : this.headersPostPublic;
   }
 
   /**
    * Subscribes to a client event.
+   * Listener exceptions and rejected promises are isolated from requests.
+   * Async listeners are not awaited; callbacks handle their own error reporting.
    *
    * @example
    * ```typescript
@@ -189,7 +192,12 @@ export class NpmClient {
   ): void {
     const callbacks = this.listeners.get(event) ?? [];
     for (const cb of callbacks) {
-      (cb as (p: typeof payload) => void)(payload);
+      try {
+        const result = (cb as (p: typeof payload) => unknown)(payload);
+        void Promise.resolve(result).catch(() => undefined);
+      } catch {
+        // Observers must never change the outcome of an HTTP request.
+      }
     }
   }
 
@@ -205,87 +213,59 @@ export class NpmClient {
   private async request<T>(
     path: string,
     params?: Record<string, string | number | boolean>,
-    baseUrl = 'registry',
+    baseUrl: ApiProvider = 'registry',
     signal?: AbortSignal,
   ): Promise<T> {
-    const base = this.baseUrls[baseUrl] ?? this.registryUrl;
-    const url = buildUrl(`${base}${path}`, params);
-    const startedAt = new Date();
-    let statusCode: number | undefined;
-    const headers =
-      this.token && (baseUrl === 'registry' || baseUrl === 'downloads')
-        ? this.headersAuth
-        : this.headersPublic;
-    try {
-      const response = await fetch(url, { headers, signal });
-      statusCode = response.status;
-      if (!response.ok) {
-        throw new NpmApiError(response.status, response.statusText);
-      }
-      const data = (await response.json()) as T;
-      this.emit('request', {
-        url,
-        method: 'GET',
-        startedAt,
-        finishedAt: new Date(),
-        durationMs: Date.now() - startedAt.getTime(),
-        statusCode,
-      });
-      return data;
-    } catch (err) {
-      const finishedAt = new Date();
-      this.emit('request', {
-        url,
-        method: 'GET',
-        startedAt,
-        finishedAt,
-        durationMs: finishedAt.getTime() - startedAt.getTime(),
-        statusCode,
-        error: err instanceof Error ? err : new Error(String(err)),
-      });
-      throw err;
-    }
+    return this.transport<T>('GET', path, baseUrl, params, undefined, signal);
   }
 
   /** @internal */
   private async post<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
-    const url = `${this.registryUrl}${path}`;
+    return this.transport<T>('POST', path, 'registry', undefined, body, signal);
+  }
+
+  private async transport<T>(
+    method: 'GET' | 'POST',
+    path: string,
+    provider: ApiProvider,
+    params?: Record<string, string | number | boolean>,
+    body?: unknown,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    const url = buildUrl(`${this.baseUrls[provider]}${path}`, params);
     const startedAt = new Date();
     let statusCode: number | undefined;
-    const headers = this.token ? this.headersPostAuth : this.headersPostPublic;
+    let error: Error | undefined;
+    const authenticated = this.token && (provider === 'registry' || provider === 'downloads');
+    const headers = method === 'POST'
+      ? (authenticated ? this.headersPostAuth : this.headersPostPublic)
+      : (authenticated ? this.headersAuth : this.headersPublic);
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-        signal,
-      });
+      const init: RequestInit = { headers, signal };
+      if (method === 'POST') {
+        init.method = method;
+        init.body = JSON.stringify(body);
+      }
+      const response = await fetch(url, init);
       statusCode = response.status;
       if (!response.ok) {
         throw new NpmApiError(response.status, response.statusText);
       }
-      const data = (await response.json()) as T;
-      this.emit('request', {
-        url,
-        method: 'POST',
-        startedAt,
-        finishedAt: new Date(),
-        durationMs: Date.now() - startedAt.getTime(),
-        statusCode,
-      });
-      return data;
+      return (await response.json()) as T;
     } catch (err) {
+      error = err instanceof Error ? err : new Error(String(err));
+      throw err;
+    } finally {
       const finishedAt = new Date();
       this.emit('request', {
         url,
-        method: 'POST',
+        method,
         startedAt,
         finishedAt,
         durationMs: finishedAt.getTime() - startedAt.getTime(),
         statusCode,
-        error: err instanceof Error ? err : new Error(String(err)),
+        ...(error ? { error } : {}),
       });
-      throw err;
     }
   }
 
@@ -311,10 +291,10 @@ export class NpmClient {
       <T>(
         path: string,
         params?: Record<string, string | number | boolean>,
-        baseUrl?: string,
+        baseUrl?: ApiProvider,
         signal?: AbortSignal,
       ) =>
-        this.request<T>(path, params, (baseUrl as 'registry' | 'downloads') ?? 'registry', signal),
+        this.request<T>(path, params, baseUrl ?? 'registry', signal),
       name,
     );
   }
@@ -471,7 +451,7 @@ export class NpmClient {
       <T>(
         path: string,
         params?: Record<string, string | number | boolean>,
-        _baseUrl?: string,
+        _baseUrl?: ApiProvider,
         signal?: AbortSignal,
       ) => this.request<T>(path, params, 'registry', signal),
       username,
@@ -499,7 +479,7 @@ export class NpmClient {
       <T>(
         path: string,
         params?: Record<string, string | number | boolean>,
-        _baseUrl?: string,
+        _baseUrl?: ApiProvider,
         signal?: AbortSignal,
       ) => this.request<T>(path, params, 'registry', signal),
       username,
@@ -527,7 +507,7 @@ export class NpmClient {
       <T>(
         path: string,
         params?: Record<string, string | number | boolean>,
-        _baseUrl?: string,
+        _baseUrl?: ApiProvider,
         signal?: AbortSignal,
       ) => this.request<T>(path, params, 'registry', signal),
       org,

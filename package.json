@@ -8,9 +8,14 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "files": [
@@ -18,7 +23,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "check": "npm run lint && npm test",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build",
     "docs": "typedoc",
     "format": "biome format --write .",
     "format:check": "biome format .",
@@ -27,7 +32,9 @@
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:client": "npm run build && node test-client/test.js",
-    "bench": "NODE_OPTIONS=--expose-gc jest --config jest.bench.config.ts --no-coverage --runInBand"
+    "bench": "NODE_OPTIONS=--expose-gc jest --config jest.bench.config.ts --no-coverage --runInBand",
+    "typecheck": "tsc --noEmit",
+    "test:package": "node scripts/test-package.mjs"
   },
   "keywords": [
     "npm",

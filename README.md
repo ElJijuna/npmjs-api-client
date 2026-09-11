@@ -472,14 +472,14 @@ npm.on('request', (event) => {
 | Field | Type | Description |
 | --- | --- | --- |
 | `url` | `string` | Full URL that was requested |
-| `method` | `'GET'` | HTTP method used |
+| `method` | `'GET' \| 'POST'` | HTTP method used |
 | `startedAt` | `Date` | When the request started |
 | `finishedAt` | `Date` | When the request finished |
 | `durationMs` | `number` | Duration in milliseconds |
 | `statusCode` | `number \| undefined` | HTTP status code, if a response was received |
 | `error` | `Error \| undefined` | Present only if the request failed |
 
-Multiple listeners can be registered. The event is always emitted after the request completes, whether it succeeded or failed. Events are emitted for all data sources — registry, downloads, packagephobia, jsDelivr, unpkg, and deps.dev.
+Multiple listeners can be registered. Listener exceptions and rejected promises are isolated: they do not change the request result or prevent other listeners from running. Async listeners are not awaited. Each listener is responsible for logging or handling its own errors. The event is always emitted after the request completes, whether it succeeded or failed. Events are emitted for all data sources — registry, downloads, packagephobia, jsDelivr, unpkg, and deps.dev.
 
 ---
 

@@ -6,7 +6,11 @@ on:
       - main
 
 jobs:
+  verify:
+    uses: ./.github/workflows/verify.yml
+
   release:
+    needs: verify
     name: Release & Publish
     runs-on: ubuntu-latest
     permissions:
@@ -27,17 +31,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Test
-        run: npm test
-
-      - name: Build
-        run: npm run build
+      - name: Verify and build
+        run: npm run check
 
       - name: Semantic Release
         id: release
