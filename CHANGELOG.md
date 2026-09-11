@@ -1,3 +1,16 @@
+# [1.10.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.9.0...v1.10.0) (2026-09-11)
+
+
+### Bug Fixes
+
+* improve code readability and structure in various files ([e844552](https://github.com/ElJijuna/npmjs-api-client/commit/e844552428ea8f62bc8ad689c076b3a9703e42e9))
+* update dependencies and improve error handling ([f9949d7](https://github.com/ElJijuna/npmjs-api-client/commit/f9949d7c0664ae1e55a2c8de4a7c881130a1efa3))
+
+
+### Features
+
+* implement verification workflow and enhance NpmClient with API provider support ([0189715](https://github.com/ElJijuna/npmjs-api-client/commit/018971580b596b4b79b759ea75f3e656b7ff36b1))
+
 # [1.9.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.8.1...v1.9.0) (2026-06-07)
 
 
