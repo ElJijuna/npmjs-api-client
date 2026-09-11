@@ -12,7 +12,7 @@ const run = (command, args, cwd = temporary) =>
     env: { ...process.env, npm_config_cache: join(temporary, 'npm-cache') },
   });
 try {
-  const supplied = process.argv[2];
+  const [, , supplied] = process.argv;
   if (!supplied) run('npm', ['pack', '--ignore-scripts', '--pack-destination', temporary], root);
   const tarball = supplied
     ? resolve(supplied)

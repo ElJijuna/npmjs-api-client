@@ -46,19 +46,20 @@ describe.each(['GET', 'POST'])('%s transport', (method) => {
     client.on('request', (event) => {
       events.push(event);
     });
-    const signal = new AbortController().signal;
+    const { signal } = new AbortController();
     const operation = invoke(client, method, signal);
     if (outcome === 'success') await expect(operation).resolves.toEqual(data);
     else if (outcome === 'http') await expect(operation).rejects.toBeInstanceOf(NpmApiError);
     else await expect(operation).rejects.toBe(failure);
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(events).toHaveLength(1);
-    expect(events[0].method).toBe(method);
+    const [event] = events;
+    expect(event.method).toBe(method);
     expect(mockFetch.mock.calls[0][1].signal).toBe(signal);
-    if (outcome === 'success') expect(events[0].error).toBeUndefined();
-    else if (outcome === 'http') expect(events[0].error).toMatchObject({ status: 503 });
-    else if (outcome === 'abort') expect(events[0].error?.message).toContain('Cancelled');
-    else expect(events[0].error).toBe(failure);
+    if (outcome === 'success') expect(event.error).toBeUndefined();
+    else if (outcome === 'http') expect(event.error).toMatchObject({ status: 503 });
+    else if (outcome === 'abort') expect(event.error?.message).toContain('Cancelled');
+    else expect(event.error).toBe(failure);
   });
 
   it('does not wait for asynchronous observers', async () => {

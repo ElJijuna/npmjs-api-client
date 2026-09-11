@@ -77,6 +77,8 @@ describe('03 — Request Pipeline (mocked fetch)', () => {
     const client = new NpmClient();
     await runBenchAsync(
       'client.search({ text: "react" })',
+      // Benchmark promise chaining overhead explicitly.
+      // eslint-disable-next-line no-restricted-syntax
       () => client.search({ text: 'react', size: 20 }).then(() => {}),
       ITERATIONS,
     );
@@ -87,6 +89,8 @@ describe('03 — Request Pipeline (mocked fetch)', () => {
     const pkgs = ['react', 'vue', 'angular', '@angular/core', 'svelte'];
     await runBenchAsync(
       'client.bulkDownloads([5 packages])',
+      // Benchmark promise chaining overhead explicitly.
+      // eslint-disable-next-line no-restricted-syntax
       () => client.bulkDownloads(pkgs).then(() => {}),
       ITERATIONS,
     );

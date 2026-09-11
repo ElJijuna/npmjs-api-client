@@ -139,7 +139,7 @@ export class MaintainerResource {
       undefined,
       signal,
     );
-    const first: NpmSearchObject | undefined = result.objects[0];
+    const [first]: NpmSearchObject[] = result.objects;
     return first?.package.publisher;
   }
 }

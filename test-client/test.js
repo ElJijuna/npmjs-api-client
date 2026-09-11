@@ -159,7 +159,9 @@ async function test() {
   console.log('Audit quick vulnerabilities:', auditQuick.metadata.vulnerabilities);
 }
 
-test().catch((error) => {
+try {
+  await test();
+} catch (error) {
   console.error(error);
   process.exitCode = 1;
-});
+}

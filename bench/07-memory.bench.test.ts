@@ -1,7 +1,7 @@
 import { NpmClient, buildUrl } from '../src/NpmClient';
 import { smallPackument, largePackument, makeMockResponse } from './fixtures';
 
-const gc = (globalThis as unknown as { gc?: () => void }).gc;
+const { gc } = globalThis as unknown as { gc?: () => void };
 
 function forceGc(): void {
   if (gc) {

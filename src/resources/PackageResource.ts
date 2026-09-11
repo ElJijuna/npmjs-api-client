@@ -49,6 +49,8 @@ export class PackageResource implements PromiseLike<NpmPackument> {
     onfulfilled?: ((value: NpmPackument) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): PromiseLike<TResult1 | TResult2> {
+    // PromiseLike requires this method to forward both callbacks.
+    // eslint-disable-next-line no-restricted-syntax
     return this.get().then(onfulfilled, onrejected);
   }
 

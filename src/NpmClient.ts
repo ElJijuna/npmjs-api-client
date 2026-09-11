@@ -22,6 +22,14 @@ const DEFAULT_UNPKG_URL = 'https://unpkg.com';
 const DEFAULT_DEPS_DEV_URL = 'https://api.deps.dev/v3';
 const DEFAULT_TOP_PACKAGES_QUERY = 'keywords:javascript';
 
+async function ignoreRejection(value: unknown): Promise<void> {
+  try {
+    await value;
+  } catch {
+    // Observers are isolated from request results.
+  }
+}
+
 /**
  * Payload emitted on every HTTP request made by {@link NpmClient}.
  */
@@ -194,7 +202,7 @@ export class NpmClient {
     for (const cb of callbacks) {
       try {
         const result = (cb as (p: typeof payload) => unknown)(payload);
-        void Promise.resolve(result).catch(() => undefined);
+        void ignoreRejection(result);
       } catch {
         // Observers must never change the outcome of an HTTP request.
       }
