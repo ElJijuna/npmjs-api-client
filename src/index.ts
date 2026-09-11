@@ -8,7 +8,12 @@ export { UserResource } from './resources/UserResource';
 export { OrgResource } from './resources/OrgResource';
 export type { MaintainerPackagesParams } from './resources/MaintainerResource';
 export type { NpmUser } from './domain/NpmUser';
-export type { NpmAuthenticatedUser, NpmUserPackages, NpmUserPackagesParams, NpmWhoami } from './domain/User';
+export type {
+  NpmAuthenticatedUser,
+  NpmUserPackages,
+  NpmUserPackagesParams,
+  NpmWhoami,
+} from './domain/User';
 export type {
   NpmOrgPackageAccess,
   NpmOrgPackages,

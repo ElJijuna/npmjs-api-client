@@ -32,10 +32,18 @@ export interface NpmsEvaluation {
 }
 
 export interface NpmsScore {
-  analyzedAt: string;
+  /**
+   * Timestamp of the underlying registry search index entry this score was read from.
+   * May be absent if the matched package has no recorded date.
+   */
+  analyzedAt?: string;
   score: {
     final: number;
     detail: NpmsScoreDetail;
   };
-  evaluation: NpmsEvaluation;
+  /**
+   * @deprecated npms.io, the only source for this granular breakdown, has been
+   * discontinued. This field is never populated — only the aggregate `score` is available.
+   */
+  evaluation?: NpmsEvaluation;
 }

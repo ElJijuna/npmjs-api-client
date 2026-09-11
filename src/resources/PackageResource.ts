@@ -3,8 +3,10 @@ import type { NpmDistTags } from '../domain/DistTag';
 import type { NpmDownloadPoint, NpmDownloadRange, NpmDownloadPeriod } from '../domain/Downloads';
 import type { NpmPackageVersion } from '../domain/PackageVersion';
 import type { NpmsScore } from '../domain/Npms';
+import type { NpmSearchResult } from '../domain/Search';
 import type { PackagephobiaSize } from '../domain/Packagephobia';
 import type { JsdelivrStats, JsdelivrGroupBy, JsdelivrPeriod } from '../domain/Jsdelivr';
+import { NpmApiError } from '../errors/NpmApiError';
 import { VersionResource, type RequestFn } from './VersionResource';
 
 /**
@@ -220,30 +222,38 @@ export class PackageResource implements PromiseLike<NpmPackument> {
   }
 
   /**
-   * Fetches the quality, maintenance, and popularity score for this package from npms.io.
+   * Fetches the quality, popularity, and maintenance score for this package.
    *
-   * Returns a detailed breakdown of each score component, including test coverage,
-   * release frequency, community interest, and dependent package count.
+   * Sourced from the npm registry's own search index (`/-/v1/search`), since
+   * npms.io — which used to provide this along with a detailed per-metric
+   * breakdown — has been discontinued. Only the aggregate scores survive;
+   * `evaluation` is kept on the return type for backwards compatibility but is
+   * never populated.
    *
-   * `GET /package/{name}` (via api.npms.io/v2)
+   * `GET /-/v1/search?text={name}&size=1`
    *
    * @param signal - Optional `AbortSignal` to cancel the request
-   * @returns Detailed score and evaluation data
+   * @returns Aggregate score data
+   * @throws {NpmApiError} with status 404 if the package has no search entry
    *
    * @example
    * ```typescript
    * const score = await npm.package('react').score();
-   * console.log(score.score.final);                         // 0.97
-   * console.log(score.evaluation.popularity.dependentsCount); // 15000
+   * console.log(score.score.final); // 0.97
    * ```
    */
   async score(signal?: AbortSignal): Promise<NpmsScore> {
-    return this.request<NpmsScore>(
-      `/package/${encodeURIComponent(this.name)}`,
-      undefined,
-      'npms',
+    const result = await this.request<NpmSearchResult>(
+      '/-/v1/search',
+      { text: this.name, size: 1 },
+      'registry',
       signal,
     );
+    const match = result.objects.find((o) => o.package.name === this.name) ?? result.objects[0];
+    if (!match) {
+      throw new NpmApiError(404, `No search results for package "${this.name}"`);
+    }
+    return { analyzedAt: match.package.date, score: match.score };
   }
 
   /**

@@ -22,7 +22,6 @@ TypeScript client for the npm ecosystem. Aggregates data from multiple sources i
 | --- | --- |
 | [registry.npmjs.org](https://registry.npmjs.org) | Package metadata, versions, dist-tags, search, maintainers, authenticated user/org data |
 | [api.npmjs.org](https://api.npmjs.org) | Download counts by period, per-day breakdown, version-level stats |
-| [api.npms.io/v2](https://api.npms.io) | Quality, maintenance & popularity scores with detailed evaluation |
 | [packagephobia.com](https://packagephobia.com) | Publish size and full install size including all transitive dependencies |
 | [data.jsdelivr.com/v1](https://data.jsdelivr.com) | CDN browser usage — hits by version and file |
 | [unpkg.com](https://unpkg.com) | Full file tree with individual file sizes and paths |
@@ -57,7 +56,6 @@ const authenticatedNpm = new NpmClient({ token: 'npm_...' });
 
 // Custom base URLs per data source
 const customNpm = new NpmClient({
-  npmsApiUrl:       'https://api.npms.io/v2',
   packagephobiaUrl: 'https://packagephobia.com',
   jsdelivrUrl:      'https://data.jsdelivr.com/v1',
   unpkgUrl:         'https://unpkg.com',
@@ -142,9 +140,11 @@ console.log(bulk['vue'].downloads);     // 4200000
 console.log(bulk['angular'].downloads); // 1800000
 ```
 
-### Quality score — npms.io
+### Quality score
 
-Returns a detailed quality, maintenance, and popularity breakdown — not just the aggregate score available in search results, but every individual component that makes it up.
+Returns the aggregate quality, popularity, and maintenance score for a package, read from the npm registry's own search index.
+
+> npms.io — which used to back this method and also exposed a detailed per-metric breakdown (test coverage, release frequency, community interest, etc.) — has been discontinued. Only the aggregate scores below remain available; there is no public replacement for the finer-grained breakdown.
 
 ```typescript
 const score = await npm.package('react').score();
@@ -155,20 +155,7 @@ console.log(score.score.detail.quality);        // 0.95
 console.log(score.score.detail.popularity);     // 0.99
 console.log(score.score.detail.maintenance);    // 0.98
 
-// Quality components
-console.log(score.evaluation.quality.tests);       // 0.8  — has test suite & coverage
-console.log(score.evaluation.quality.health);      // 1.0  — no vulnerable/outdated deps
-console.log(score.evaluation.quality.carefulness); // 0.9  — has lockfile, .gitignore, stable semver
-
-// Popularity components
-console.log(score.evaluation.popularity.dependentsCount);        // 15000 — packages that depend on this
-console.log(score.evaluation.popularity.downloadsAcceleration);  // 0.1   — growth trend
-
-// Maintenance components
-console.log(score.evaluation.maintenance.releasesFrequency); // 0.9
-console.log(score.evaluation.maintenance.openIssues);        // 0.8
-
-// Timestamp of the last analysis
+// Date of the search index entry this score was read from
 console.log(score.analyzedAt); // '2024-01-01T00:00:00.000Z'
 ```
 
@@ -492,7 +479,7 @@ npm.on('request', (event) => {
 | `statusCode` | `number \| undefined` | HTTP status code, if a response was received |
 | `error` | `Error \| undefined` | Present only if the request failed |
 
-Multiple listeners can be registered. The event is always emitted after the request completes, whether it succeeded or failed. Events are emitted for all data sources — registry, downloads, npms.io, packagephobia, jsDelivr, unpkg, and deps.dev.
+Multiple listeners can be registered. The event is always emitted after the request completes, whether it succeeded or failed. Events are emitted for all data sources — registry, downloads, packagephobia, jsDelivr, unpkg, and deps.dev.
 
 ---
 
@@ -541,7 +528,7 @@ import type {
   NpmDownloadPoint, NpmDownloadRange, NpmDownloadDay, NpmDownloadPeriod,
   NpmVersionDownloadPeriod, NpmVersionDownloadPoint, NpmBulkDownloads,
 
-  // npms.io
+  // Score (evaluation types are deprecated — npms.io was discontinued)
   NpmsScore, NpmsScoreDetail, NpmsEvaluation,
   NpmsQualityEvaluation, NpmsPopularityEvaluation, NpmsMaintenanceEvaluation,
 

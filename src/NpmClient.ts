@@ -15,7 +15,6 @@ import type { NpmWhoami } from './domain/User';
 
 const DEFAULT_REGISTRY_URL = 'https://registry.npmjs.org';
 const DEFAULT_DOWNLOADS_URL = 'https://api.npmjs.org';
-const DEFAULT_NPMS_URL = 'https://api.npms.io/v2';
 const DEFAULT_PACKAGEPHOBIA_URL = 'https://packagephobia.com';
 const DEFAULT_JSDELIVR_URL = 'https://data.jsdelivr.com/v1';
 const DEFAULT_UNPKG_URL = 'https://unpkg.com';
@@ -60,10 +59,6 @@ export interface NpmClientOptions {
    * Base URL for the npm Downloads API (default: `'https://api.npmjs.org'`).
    */
   downloadsApiUrl?: string;
-  /**
-   * Base URL for the npms.io API (default: `'https://api.npms.io/v2'`).
-   */
-  npmsApiUrl?: string;
   /**
    * Base URL for the Packagephobia API (default: `'https://packagephobia.com'`).
    */
@@ -121,7 +116,6 @@ export interface NpmClientOptions {
 export class NpmClient {
   private readonly registryUrl: string;
   private readonly downloadsApiUrl: string;
-  private readonly npmsApiUrl: string;
   private readonly packagephobiaUrl: string;
   private readonly jsdelivrUrl: string;
   private readonly unpkgUrl: string;
@@ -141,7 +135,6 @@ export class NpmClient {
   constructor(options: NpmClientOptions = {}) {
     this.registryUrl = (options.registryUrl ?? DEFAULT_REGISTRY_URL).replace(/\/$/, '');
     this.downloadsApiUrl = (options.downloadsApiUrl ?? DEFAULT_DOWNLOADS_URL).replace(/\/$/, '');
-    this.npmsApiUrl = (options.npmsApiUrl ?? DEFAULT_NPMS_URL).replace(/\/$/, '');
     this.packagephobiaUrl = (options.packagephobiaUrl ?? DEFAULT_PACKAGEPHOBIA_URL).replace(
       /\/$/,
       '',
@@ -153,7 +146,6 @@ export class NpmClient {
     this.baseUrls = {
       registry: this.registryUrl,
       downloads: this.downloadsApiUrl,
-      npms: this.npmsApiUrl,
       packagephobia: this.packagephobiaUrl,
       jsdelivr: this.jsdelivrUrl,
       unpkg: this.unpkgUrl,
@@ -166,10 +158,10 @@ export class NpmClient {
     this.headersPostPublic = { Accept: 'application/json', 'Content-Type': 'application/json' };
     this.headersPostAuth = this.token
       ? {
-        Accept: 'application/json',
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      }
+          Accept: 'application/json',
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        }
       : this.headersPostPublic;
   }
 
@@ -206,7 +198,7 @@ export class NpmClient {
    *
    * @param path - Path to append to the base URL
    * @param params - Optional query parameters
-   * @param baseUrl - Which base URL to use: `'registry'` (default), `'downloads'`, `'npms'`, `'packagephobia'`, `'jsdelivr'`, `'unpkg'`, or `'depsdev'`
+   * @param baseUrl - Which base URL to use: `'registry'` (default), `'downloads'`, `'packagephobia'`, `'jsdelivr'`, `'unpkg'`, or `'depsdev'`
    * @param signal - Optional `AbortSignal` to cancel the request
    * @internal
    */

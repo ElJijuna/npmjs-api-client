@@ -14,7 +14,6 @@
 | ----------------- | ---------------------------- | ----------------------------------------------------------------- |
 | npm Registry      | `registry.npmjs.org`         | Metadata, versions, dist-tags, search, maintainers                |
 | npm Downloads API | `api.npmjs.org`              | Historical download counts by period and by version               |
-| npms.io           | `api.npms.io/v2`             | Quality, maintenance & popularity scores with detailed evaluation  |
 | Packagephobia     | `packagephobia.com`          | Publish size and full install size including transitive deps       |
 | jsDelivr          | `data.jsdelivr.com/v1`       | CDN usage stats — browser/production hits by version and file     |
 | unpkg             | `unpkg.com`                  | Full file tree with individual file sizes and paths               |
@@ -53,7 +52,7 @@
 | `distTags(signal?)`               | `GET /-/package/{name}/dist-tags`                                     | ✅     |
 | `downloads(period?, signal?)`     | `GET /downloads/point/{period}/{name}`                                | ✅     |
 | `downloadRange(period?, signal?)` | `GET /downloads/range/{period}/{name}`                                | ✅     |
-| `score(signal?)`                  | `GET /package/{name}` via api.npms.io                                 | ✅     |
+| `score(signal?)`                  | `GET /-/v1/search?text={name}&size=1` (npms.io was discontinued)      | ✅     |
 | `size(signal?)`                   | `GET /v2/api.json?p={name}` via packagephobia.com                     | ✅     |
 | `cdnStats(groupBy?, period?, signal?)` | `GET /package/npm/{name}/stats/{groupBy}/{period}` via data.jsdelivr.com | ✅ |
 | `addDistTag(tag, version)`        | `PUT /-/package/{name}/dist-tags/{tag}`                               | ⬜     |
@@ -129,6 +128,13 @@ The following APIs complement the existing data without duplicating it. Each sec
 ---
 
 ## 1. api.npms.io/v2 — Detailed quality, maintenance & popularity scores
+
+> **Status: npms.io was discontinued and this integration was retired.** `score()` was
+> re-implemented on top of the registry search endpoint (`/-/v1/search`), which still
+> provides the aggregate `score.final` / `score.detail` fields. The granular `evaluation`
+> breakdown described below has no public replacement and is no longer populated — the
+> `evaluation*` types remain exported but deprecated for backwards compatibility. Rationale
+> kept below for historical context.
 
 **Why add it:** The registry search (`/-/v1/search`) already returns three aggregated scores (`quality`, `popularity`, `maintenance`) as numbers between 0 and 1, but only when performing a search. It does not expose the detailed breakdown of each component: we can't tell whether a low quality score is due to missing tests, outdated dependencies, or no README. The npms.io API provides exactly that breakdown, for any package on demand.
 

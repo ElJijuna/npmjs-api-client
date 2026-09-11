@@ -21,7 +21,6 @@ describe('01 — Client Construction', () => {
       new NpmClient({
         registryUrl: 'https://custom.registry.io/',
         downloadsApiUrl: 'https://custom.downloads.io/',
-        npmsApiUrl: 'https://custom.npms.io/v2',
         packagephobiaUrl: 'https://custom.phobia.io/',
         jsdelivrUrl: 'https://custom.jsdelivr.io/v1',
         unpkgUrl: 'https://custom.unpkg.io/',

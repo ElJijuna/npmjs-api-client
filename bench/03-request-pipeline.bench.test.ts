@@ -36,7 +36,26 @@ describe('03 — Request Pipeline (mocked fetch)', () => {
     );
   });
 
-  it('package.score() — GET to npms (third-party base URL)', async () => {
+  it('package.score() — GET to registry search, aggregate score lookup', async () => {
+    jest.restoreAllMocks();
+    jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
+      Promise.resolve(
+        makeMockResponse({
+          objects: [
+            {
+              package: { name: 'react', scope: 'unscoped', version: '18.2.0' },
+              score: {
+                final: 0.97,
+                detail: { quality: 0.95, popularity: 0.99, maintenance: 0.98 },
+              },
+              searchScore: 100000,
+            },
+          ],
+          total: 1,
+          time: '2024-01-01T00:00:00.000Z',
+        }),
+      ),
+    );
     const client = new NpmClient();
     const pkg = client.package('react');
     await runBenchAsync('package.score()', () => pkg.score(), ITERATIONS);

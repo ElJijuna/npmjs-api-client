@@ -365,61 +365,66 @@ describe('PackageResource', () => {
   });
 
   describe('score()', () => {
-    const scoreFixture = {
-      analyzedAt: '2024-01-01T00:00:00.000Z',
-      score: { final: 0.97, detail: { quality: 0.95, popularity: 0.99, maintenance: 0.98 } },
-      evaluation: {
-        quality: { carefulness: 0.9, tests: 0.8, health: 1, branding: 0.7 },
-        popularity: {
-          communityInterest: 50000,
-          downloadsCount: 1e8,
-          downloadsAcceleration: 0.1,
-          dependentsCount: 15000,
-        },
-        maintenance: {
-          releasesFrequency: 0.9,
-          commitsFrequency: 0.95,
-          openIssues: 0.8,
-          issuesDistribution: 0.85,
-        },
-      },
-    };
+    function searchFixture(name: string) {
+      return {
+        objects: [
+          {
+            package: {
+              name,
+              scope: 'unscoped',
+              version: '1.0.0',
+              date: '2024-01-01T00:00:00.000Z',
+            },
+            score: { final: 0.97, detail: { quality: 0.95, popularity: 0.99, maintenance: 0.98 } },
+            searchScore: 100000,
+          },
+        ],
+        total: 1,
+        time: '2024-01-01T00:00:00.000Z',
+      };
+    }
 
-    it('fetches the npms.io score', async () => {
-      mockResponse(scoreFixture);
+    it('fetches the aggregate score from registry search', async () => {
+      mockResponse(searchFixture('react'));
       const result = await npm.package('react').score();
       expect(result.score.final).toBe(0.97);
-      expect(result.evaluation.popularity.dependentsCount).toBe(15000);
+      expect(result.score.detail).toEqual({ quality: 0.95, popularity: 0.99, maintenance: 0.98 });
+      expect(result.analyzedAt).toBe('2024-01-01T00:00:00.000Z');
     });
 
-    it('calls the npms.io API endpoint', async () => {
-      mockResponse(scoreFixture);
+    it('calls the registry search endpoint with the package name and size=1', async () => {
+      mockResponse(searchFixture('react'));
       await npm.package('react').score();
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.npms.io/v2/package/react',
+        'https://registry.npmjs.org/-/v1/search?text=react&size=1',
         expect.any(Object),
       );
     });
 
-    it('encodes scoped package name in score URL', async () => {
-      mockResponse(scoreFixture);
+    it('encodes scoped package name in the search query', async () => {
+      mockResponse(searchFixture('@types/node'));
       await npm.package('@types/node').score();
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.npms.io/v2/package/%40types%2Fnode',
+        'https://registry.npmjs.org/-/v1/search?text=%40types%2Fnode&size=1',
         expect.any(Object),
       );
     });
 
-    it('does not send Authorization header to npms.io', async () => {
+    it('throws NpmApiError when the package has no search results', async () => {
+      mockResponse({ objects: [], total: 0, time: '2024-01-01T00:00:00.000Z' });
+      await expect(npm.package('nonexistent-pkg-xyz').score()).rejects.toThrow(NpmApiError);
+    });
+
+    it('sends the Authorization header when a token is configured', async () => {
       const authedNpm = new NpmClient({ token: 'secret' });
-      mockResponse(scoreFixture);
+      mockResponse(searchFixture('react'));
       await authedNpm.package('react').score();
       const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
-      expect((init.headers as Record<string, string>)['Authorization']).toBeUndefined();
+      expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer secret');
     });
 
     it('passes signal to fetch', async () => {
-      mockResponse(scoreFixture);
+      mockResponse(searchFixture('react'));
       const controller = new AbortController();
       await npm.package('react').score(controller.signal);
       expect(mockFetch).toHaveBeenCalledWith(
