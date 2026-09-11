@@ -2,6 +2,15 @@ import { NpmClient } from '../dist/index.js';
 
 const npm = new NpmClient();
 
+async function checkExternal(name, operation) {
+  try {
+    await operation();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.warn(`[SKIP] ${name}: ${detail}`);
+  }
+}
+
 async function test() {
   // --- PackageResource ---
 
@@ -30,21 +39,26 @@ async function test() {
   console.log('Download range days:', range.downloads.length);
   console.log('First day:', range.downloads[0].day, range.downloads[0].downloads);
 
-  // Quality score — npms.io
+  // Quality score — npm registry search index
   const score = await npm.package('typescript').score();
   console.log('Score final:', score.score.final);
   console.log('Score quality:', score.score.detail.quality);
-  console.log('Dependents count:', score.evaluation.popularity.dependentsCount);
+  console.log('Score popularity:', score.score.detail.popularity);
+  console.log('Score maintenance:', score.score.detail.maintenance);
 
   // Install size — packagephobia
-  const size = await npm.package('typescript').size();
-  console.log('Publish size:', size.publish.pretty);
-  console.log('Install size:', size.install.pretty);
+  await checkExternal('Packagephobia package size', async () => {
+    const size = await npm.package('typescript').size();
+    console.log('Publish size:', size.publish.pretty);
+    console.log('Install size:', size.install.pretty);
+  });
 
   // CDN stats — jsDelivr (by version, last month)
-  const cdnStats = await npm.package('typescript').cdnStats();
-  console.log('CDN rank:', cdnStats.rank);
-  console.log('CDN total hits:', cdnStats.total);
+  await checkExternal('jsDelivr package stats', async () => {
+    const cdnStats = await npm.package('typescript').cdnStats();
+    console.log('CDN rank:', cdnStats.rank);
+    console.log('CDN total hits:', cdnStats.total);
+  });
 
   // --- VersionResource ---
 
@@ -61,24 +75,32 @@ async function test() {
   console.log('Version 5.0.2 downloads last-week:', versionDownloads.downloads);
 
   // Version install size
-  const versionSize = await npm.package('typescript').version('5.0.2').size();
-  console.log('Version 5.0.2 install size:', versionSize.install.pretty);
+  await checkExternal('Packagephobia version size', async () => {
+    const versionSize = await npm.package('typescript').version('5.0.2').size();
+    console.log('Version 5.0.2 install size:', versionSize.install.pretty);
+  });
 
   // File tree — unpkg
-  const files = await npm.package('typescript').version('5.0.2').files();
-  console.log('File tree root type:', files.type);
-  console.log('Top-level entries:', files.files?.map((f) => f.path).join(', '));
+  await checkExternal('unpkg file tree', async () => {
+    const files = await npm.package('typescript').version('5.0.2').files();
+    console.log('File tree root type:', files.type);
+    console.log('Top-level entries:', files.files?.map((f) => f.path).join(', '));
+  });
 
   // CDN stats at version level (by file)
-  const versionCdn = await npm.package('typescript').version('5.0.2').cdnStats();
-  console.log('Version CDN total hits:', versionCdn.total);
+  await checkExternal('jsDelivr version stats', async () => {
+    const versionCdn = await npm.package('typescript').version('5.0.2').cdnStats();
+    console.log('Version CDN total hits:', versionCdn.total);
+  });
 
   // Resolved dependency graph — deps.dev
-  const deps = await npm.package('typescript').version('5.0.2').dependencies();
-  console.log('Dependency nodes:', deps.nodes.length);
-  deps.nodes.forEach((n) =>
-    console.log(` - [${n.relation}] ${n.versionKey.name}@${n.versionKey.version}`),
-  );
+  await checkExternal('deps.dev dependency graph', async () => {
+    const deps = await npm.package('typescript').version('5.0.2').dependencies();
+    console.log('Dependency nodes:', deps.nodes.length);
+    deps.nodes.forEach((n) =>
+      console.log(` - [${n.relation}] ${n.versionKey.name}@${n.versionKey.version}`),
+    );
+  });
 
   // --- NpmClient convenience methods ---
 
@@ -137,4 +159,7 @@ async function test() {
   console.log('Audit quick vulnerabilities:', auditQuick.metadata.vulnerabilities);
 }
 
-test().catch(console.error);
+test().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

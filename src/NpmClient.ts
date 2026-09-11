@@ -159,10 +159,10 @@ export class NpmClient {
     this.headersPostPublic = { Accept: 'application/json', 'Content-Type': 'application/json' };
     this.headersPostAuth = this.token
       ? {
-        Accept: 'application/json',
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      }
+          Accept: 'application/json',
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        }
       : this.headersPostPublic;
   }
 
@@ -237,9 +237,14 @@ export class NpmClient {
     let statusCode: number | undefined;
     let error: Error | undefined;
     const authenticated = this.token && (provider === 'registry' || provider === 'downloads');
-    const headers = method === 'POST'
-      ? (authenticated ? this.headersPostAuth : this.headersPostPublic)
-      : (authenticated ? this.headersAuth : this.headersPublic);
+    const headers =
+      method === 'POST'
+        ? authenticated
+          ? this.headersPostAuth
+          : this.headersPostPublic
+        : authenticated
+          ? this.headersAuth
+          : this.headersPublic;
     try {
       const init: RequestInit = { headers, signal };
       if (method === 'POST') {
@@ -293,8 +298,7 @@ export class NpmClient {
         params?: Record<string, string | number | boolean>,
         baseUrl?: ApiProvider,
         signal?: AbortSignal,
-      ) =>
-        this.request<T>(path, params, baseUrl ?? 'registry', signal),
+      ) => this.request<T>(path, params, baseUrl ?? 'registry', signal),
       name,
     );
   }

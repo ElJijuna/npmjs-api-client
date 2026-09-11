@@ -1,5 +1,11 @@
 /** @internal */
-export type ApiProvider = 'registry' | 'downloads' | 'packagephobia' | 'jsdelivr' | 'unpkg' | 'depsdev';
+export type ApiProvider =
+  | 'registry'
+  | 'downloads'
+  | 'packagephobia'
+  | 'jsdelivr'
+  | 'unpkg'
+  | 'depsdev';
 
 /** @internal */
 export type RequestFn = <T>(
