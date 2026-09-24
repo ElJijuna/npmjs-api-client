@@ -1,14 +1,14 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
-  "extends": ["super-configs/biome"],
-  "files": {
-    "includes": [
-      "!dist",
-      "!coverage",
-      "!docs",
-      "!node_modules",
-      "!package-lock.json",
-      "!CHANGELOG.md"
-    ]
-  }
+    "$schema": "https://biomejs.dev/schemas/2.5.3/schema.json",
+    "extends": ["super-configs/biome"],
+    "files": {
+        "includes": [
+            "!dist",
+            "!coverage",
+            "!docs",
+            "!node_modules",
+            "!package-lock.json",
+            "!CHANGELOG.md"
+        ]
+    }
 }

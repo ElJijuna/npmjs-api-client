@@ -1,5 +1,6 @@
 import type { NpmSearchResult, NpmSearchObject } from '../domain/Search';
 import type { NpmUser } from '../domain/NpmUser';
+import type { NpmPerson } from '../domain/Packument';
 import type { RequestFn } from './types';
 
 /**
@@ -47,14 +48,14 @@ export class MaintainerResource {
   /**
    * Fetches the public profile of this npm user.
    *
-   * Internally searches for packages by the maintainer and extracts the
-   * publisher profile from the first result — no authentication required.
+   * Internally searches for packages by the maintainer and extracts this
+   * user's entry from the first result's maintainers — no authentication required.
    *
    * `GET /-/v1/search?text=maintainer:{username}&size=1`
    *
    * @param signal - Optional `AbortSignal` to cancel the request
-   * @returns The user profile with `name` and optional `email`
-   * @throws {NpmApiError} If the user has no published packages (404-equivalent: no results)
+   * @returns The user profile with `name` and optional `email`. When the user has
+   * no published packages, `name` is the requested username and `email` is `undefined`.
    *
    * @example
    * ```typescript
@@ -64,12 +65,11 @@ export class MaintainerResource {
    * ```
    */
   async info(signal?: AbortSignal): Promise<NpmUser> {
-    const publisher = await this.publisher(signal);
-    const email = publisher?.email;
+    const profile = await this.profile(signal);
 
     return {
-      name: publisher?.username ?? this.username,
-      email,
+      name: profile?.username ?? this.username,
+      email: profile?.email,
     };
   }
 
@@ -113,8 +113,8 @@ export class MaintainerResource {
   /**
    * Returns the public avatar URL for this npm user when a public email is available.
    *
-   * Internally searches for packages by the maintainer, extracts the public
-   * publisher email from the first result, and derives a Gravatar URL.
+   * Internally searches for packages by the maintainer, extracts this user's
+   * public email from the first result's maintainers, and derives a Gravatar URL.
    *
    * `GET /-/v1/search?text=maintainer:{username}&size=1`
    *
@@ -128,11 +128,16 @@ export class MaintainerResource {
    * ```
    */
   async avatar(signal?: AbortSignal): Promise<string | undefined> {
-    const publisher = await this.publisher(signal);
-    return publisher?.email ? gravatarUrl(publisher.email) : undefined;
+    const profile = await this.profile(signal);
+    return profile?.email ? gravatarUrl(profile.email) : undefined;
   }
 
-  private async publisher(signal?: AbortSignal): Promise<NpmSearchObject['package']['publisher']> {
+  /**
+   * Finds this user's entry in the first search result. The package publisher
+   * is only used when it is this user: a maintainer's packages are often
+   * published by someone else.
+   */
+  private async profile(signal?: AbortSignal): Promise<NpmPerson | undefined> {
     const result = await this.request<NpmSearchResult>(
       '/-/v1/search',
       { text: `maintainer:${this.username}`, size: 1 },
@@ -140,7 +145,12 @@ export class MaintainerResource {
       signal,
     );
     const [first]: NpmSearchObject[] = result.objects;
-    return first?.package.publisher;
+    if (!first) return undefined;
+    const username = this.username.toLowerCase();
+    const isUser = (person?: NpmPerson): person is NpmPerson =>
+      person?.username?.toLowerCase() === username;
+    const { maintainers, publisher } = first.package;
+    return maintainers?.find(isUser) ?? (isUser(publisher) ? publisher : undefined);
   }
 }
 

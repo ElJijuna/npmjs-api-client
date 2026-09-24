@@ -35,6 +35,27 @@ const mockSearchResult = {
   time: '2024-01-01T00:00:00.000Z',
 };
 
+function withPackage(overrides: Record<string, unknown>) {
+  return {
+    ...mockSearchResult,
+    objects: [
+      {
+        ...mockSearchResult.objects[0],
+        package: { ...mockSearchResult.objects[0].package, ...overrides },
+      },
+    ],
+  };
+}
+
+// Mirrors `maintainer:isaacs`, whose top result was published by a co-maintainer.
+const publishedByCoMaintainer = withPackage({
+  publisher: { username: 'juliangruber', email: 'julian@juliangruber.com' },
+  maintainers: [
+    { username: 'juliangruber', email: 'julian@juliangruber.com' },
+    { username: 'isaacs', email: 'i@izs.me' },
+  ],
+});
+
 describe('MaintainerResource', () => {
   let npm: NpmClient;
 
@@ -51,19 +72,10 @@ describe('MaintainerResource', () => {
   });
 
   describe('info()', () => {
-    it('extracts publisher profile from search result', async () => {
-      mockResponse({
-        ...mockSearchResult,
-        objects: [
-          {
-            ...mockSearchResult.objects[0],
-            package: {
-              ...mockSearchResult.objects[0].package,
-              publisher: { username: 'pilmee', email: 'pilmee@gmail.com' },
-            },
-          },
-        ],
-      });
+    it('extracts the maintainer profile from search result', async () => {
+      mockResponse(
+        withPackage({ maintainers: [{ username: 'pilmee', email: 'pilmee@gmail.com' }] }),
+      );
       const profile = await npm.maintainer('pilmee').info();
       expect(profile.name).toBe('pilmee');
       expect(profile.email).toBe('pilmee@gmail.com');
@@ -83,21 +95,44 @@ describe('MaintainerResource', () => {
       expect(profile.email).toBeUndefined();
     });
 
-    it('returns email as undefined when publisher has none', async () => {
-      mockResponse({
-        ...mockSearchResult,
-        objects: [
-          {
-            ...mockSearchResult.objects[0],
-            package: {
-              ...mockSearchResult.objects[0].package,
-              publisher: { username: 'pilmee' },
-            },
-          },
-        ],
-      });
+    it('returns email as undefined when the maintainer has none', async () => {
+      mockResponse(withPackage({ maintainers: [{ username: 'pilmee' }] }));
       const profile = await npm.maintainer('pilmee').info();
       expect(profile.email).toBeUndefined();
+    });
+
+    it('ignores the publisher when it is a different user', async () => {
+      mockResponse(publishedByCoMaintainer);
+      const profile = await npm.maintainer('isaacs').info();
+      expect(profile).toEqual({ name: 'isaacs', email: 'i@izs.me' });
+    });
+
+    it('matches the username case-insensitively', async () => {
+      mockResponse(publishedByCoMaintainer);
+      const profile = await npm.maintainer('IsaacS').info();
+      expect(profile).toEqual({ name: 'isaacs', email: 'i@izs.me' });
+    });
+
+    it('falls back to the publisher when it is this user and maintainers are missing', async () => {
+      mockResponse(
+        withPackage({
+          publisher: { username: 'pilmee', email: 'pilmee@gmail.com' },
+          maintainers: undefined,
+        }),
+      );
+      const profile = await npm.maintainer('pilmee').info();
+      expect(profile).toEqual({ name: 'pilmee', email: 'pilmee@gmail.com' });
+    });
+
+    it("never returns another user's email when this user is not listed", async () => {
+      mockResponse(
+        withPackage({
+          publisher: { username: 'someone-else', email: 'else@example.com' },
+          maintainers: [{ username: 'someone-else', email: 'else@example.com' }],
+        }),
+      );
+      const profile = await npm.maintainer('pilmee').info();
+      expect(profile).toEqual({ name: 'pilmee', email: undefined });
     });
   });
 
@@ -155,19 +190,10 @@ describe('MaintainerResource', () => {
   });
 
   describe('avatar()', () => {
-    it('returns a Gravatar URL derived from the public publisher email', async () => {
-      mockResponse({
-        ...mockSearchResult,
-        objects: [
-          {
-            ...mockSearchResult.objects[0],
-            package: {
-              ...mockSearchResult.objects[0].package,
-              publisher: { username: 'pilmee', email: 'pilmee@gmail.com' },
-            },
-          },
-        ],
-      });
+    it('returns a Gravatar URL derived from the public maintainer email', async () => {
+      mockResponse(
+        withPackage({ maintainers: [{ username: 'pilmee', email: 'pilmee@gmail.com' }] }),
+      );
       const url = await npm.maintainer('pilmee').avatar();
       expect(url).toBe(
         'https://www.gravatar.com/avatar/062d380b834f09366e280dce73f4a553cb56cc7e5714634ffda175c292436895?d=identicon&s=128',
@@ -175,19 +201,22 @@ describe('MaintainerResource', () => {
     });
 
     it('returns undefined when no public email is available', async () => {
-      mockResponse({
-        ...mockSearchResult,
-        objects: [
-          {
-            ...mockSearchResult.objects[0],
-            package: {
-              ...mockSearchResult.objects[0].package,
-              publisher: { username: 'pilmee' },
-            },
-          },
-        ],
-      });
+      mockResponse(withPackage({ maintainers: [{ username: 'pilmee' }] }));
       const url = await npm.maintainer('pilmee').avatar();
+      expect(url).toBeUndefined();
+    });
+
+    it("uses this maintainer's email, not the publisher's", async () => {
+      mockResponse(publishedByCoMaintainer);
+      const url = await npm.maintainer('isaacs').avatar();
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('i@izs.me'));
+      const hash = Buffer.from(digest).toString('hex');
+      expect(url).toBe(`https://www.gravatar.com/avatar/${hash}?d=identicon&s=128`);
+    });
+
+    it('returns undefined when there are no results', async () => {
+      mockResponse({ objects: [], total: 0, time: '' });
+      const url = await npm.maintainer('ghost').avatar();
       expect(url).toBeUndefined();
     });
 

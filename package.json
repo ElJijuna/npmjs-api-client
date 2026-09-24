@@ -1,75 +1,75 @@
 {
-  "name": "npmjs-api-client",
-  "version": "1.10.0",
-  "type": "module",
-  "description": "TypeScript client for the npm Registry REST API",
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+    "name": "npmjs-api-client",
+    "version": "1.10.0",
+    "type": "module",
+    "description": "TypeScript client for the npm Registry REST API",
+    "main": "dist/index.cjs",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "check": "npm run lint && npm run typecheck && npm test && npm run build",
+        "docs": "typedoc",
+        "format": "biome format --write .",
+        "format:check": "biome format .",
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "test": "jest",
+        "test:coverage": "jest --coverage",
+        "test:client": "npm run build && node test-client/test.js",
+        "bench": "NODE_OPTIONS=--expose-gc jest --config jest.bench.config.ts --no-coverage --runInBand",
+        "typecheck": "tsc --noEmit",
+        "test:package": "node scripts/test-package.mjs"
+    },
+    "keywords": [
+        "npm",
+        "npmjs",
+        "registry",
+        "api-client",
+        "rest",
+        "typescript"
+    ],
+    "engines": {
+        "node": ">=18"
+    },
+    "license": "MIT",
+    "author": "pilmee <pilmee@gmail.com> (https://github.com/ElJijuna)",
+    "homepage": "https://eljijuna.github.io/npmjs-api-client",
+    "bugs": {
+        "url": "https://github.com/ElJijuna/npmjs-api-client/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ElJijuna/npmjs-api-client.git"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.5.3",
+        "@semantic-release/changelog": "^6.0.3",
+        "@semantic-release/git": "^10.0.1",
+        "@types/jest": "^30.0.0",
+        "eslint": "^10.10.0",
+        "jest": "^30.4.2",
+        "semantic-release": "^25.0.3",
+        "super-configs": "^1.25.1",
+        "ts-jest": "^29.4.1",
+        "ts-node": "^10.9.2",
+        "tsup": "^8.5.1",
+        "typedoc": "^0.28.0",
+        "typescript": "^6.0.0"
     }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "check": "npm run lint && npm run typecheck && npm test && npm run build",
-    "docs": "typedoc",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "test": "jest",
-    "test:coverage": "jest --coverage",
-    "test:client": "npm run build && node test-client/test.js",
-    "bench": "NODE_OPTIONS=--expose-gc jest --config jest.bench.config.ts --no-coverage --runInBand",
-    "typecheck": "tsc --noEmit",
-    "test:package": "node scripts/test-package.mjs"
-  },
-  "keywords": [
-    "npm",
-    "npmjs",
-    "registry",
-    "api-client",
-    "rest",
-    "typescript"
-  ],
-  "engines": {
-    "node": ">=18"
-  },
-  "license": "MIT",
-  "author": "pilmee <pilmee@gmail.com> (https://github.com/ElJijuna)",
-  "homepage": "https://eljijuna.github.io/npmjs-api-client",
-  "bugs": {
-    "url": "https://github.com/ElJijuna/npmjs-api-client/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ElJijuna/npmjs-api-client.git"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.16",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
-    "@types/jest": "^30.0.0",
-    "eslint": "^10.10.0",
-    "jest": "^30.4.2",
-    "semantic-release": "^25.0.3",
-    "super-configs": "^1.25.1",
-    "ts-jest": "^29.4.1",
-    "ts-node": "^10.9.2",
-    "tsup": "^8.5.1",
-    "typedoc": "^0.28.0",
-    "typescript": "^6.0.0"
-  }
 }
