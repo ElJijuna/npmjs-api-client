@@ -1,3 +1,17 @@
+## [1.10.1](https://github.com/ElJijuna/npmjs-api-client/compare/v1.10.0...v1.10.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* clarify token handling in NpmClient and update related tests ([c89a9d1](https://github.com/ElJijuna/npmjs-api-client/commit/c89a9d1ff9f51f9ab5975232efed3867de816ffe))
+* enhance error handling for non-existent packages in score method and update documentation ([785156e](https://github.com/ElJijuna/npmjs-api-client/commit/785156e02092109f7ad93a70a51ff78a5d6229aa))
+* enhance NpmApiError to include response body and detail, update tests for error handling ([a032788](https://github.com/ElJijuna/npmjs-api-client/commit/a032788e0a92eea2a449175c5f2ba6909d2d76e2))
+* implement dist-tag resolution for version-related API calls and enhance regression tests ([55a4441](https://github.com/ElJijuna/npmjs-api-client/commit/55a44417944fc1455812cd2dbe02ae9470fb2333))
+* implement off() method for event listener removal and add related tests ([d8b35d3](https://github.com/ElJijuna/npmjs-api-client/commit/d8b35d3a2a9ff82f18b1daf9ecd1d78bbb34e09e))
+* improve bulkDownloads handling for scoped and unscoped packages, add support for missing packages, and update tests ([271b9ac](https://github.com/ElJijuna/npmjs-api-client/commit/271b9ac8bbeb006029c37c54870b73c54ef527e7))
+* update maintainers and avatar info, format configuration files and update package dependencies ([cc3cab9](https://github.com/ElJijuna/npmjs-api-client/commit/cc3cab9e17dd871e6b6d9ebcf5b058dbe44dbbcc))
+* update versions() to sort by publication time and add related tests for version ordering ([c914823](https://github.com/ElJijuna/npmjs-api-client/commit/c914823d397315b54ee928948d530b084acfb4ae))
+
 # [1.10.0](https://github.com/ElJijuna/npmjs-api-client/compare/v1.9.0...v1.10.0) (2026-09-11)
 
 
