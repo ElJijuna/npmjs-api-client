@@ -488,9 +488,9 @@ describe('NpmClient', () => {
     it('fetches download counts for multiple packages', async () => {
       mockResponse(bulkFixture);
       const result = await npm.bulkDownloads(['react', 'lodash', 'vue']);
-      expect(result['react'].downloads).toBe(18591460);
-      expect(result['lodash'].downloads).toBe(3001256);
-      expect(result['vue'].downloads).toBe(4200000);
+      expect(result['react']?.downloads).toBe(18591460);
+      expect(result['lodash']?.downloads).toBe(3001256);
+      expect(result['vue']?.downloads).toBe(4200000);
     });
 
     it('calls the downloads API with comma-separated package names', async () => {
@@ -518,20 +518,87 @@ describe('NpmClient', () => {
       );
     });
 
-    it('encodes scoped package names', async () => {
-      mockResponse({
-        '@types/node': {
-          downloads: 100,
-          start: '2024-03-14',
-          end: '2024-04-13',
-          package: '@types/node',
-        },
+    const point = (name: string, downloads = 100) => ({
+      downloads,
+      start: '2024-03-14',
+      end: '2024-04-13',
+      package: name,
+    });
+
+    function mockDownloadsByUrl(): void {
+      mockFetch.mockImplementation(async (url: string) => {
+        const names = decodeURIComponent(url.split('/').pop()!).split(',');
+        if (names.length === 1) {
+          const [name] = names as [string];
+          if (name.includes('missing')) {
+            return { ok: false, status: 404, statusText: 'Not Found', json: async () => ({}) };
+          }
+          return { ok: true, status: 200, json: async () => point(name) };
+        }
+        const map = Object.fromEntries(
+          names.map((name) => [name, name.includes('missing') ? null : point(name)]),
+        );
+        return { ok: true, status: 200, json: async () => map };
       });
-      await npm.bulkDownloads(['@types/node']);
-      expect(mockFetch).toHaveBeenCalledWith(
+    }
+
+    afterEach(() => mockFetch.mockReset());
+
+    it('fetches scoped packages individually, since npm rejects them in bulk', async () => {
+      mockDownloadsByUrl();
+      const result = await npm.bulkDownloads(['react', '@types/node', 'vue', '@babel/core']);
+      const urls = mockFetch.mock.calls.map(([url]) => url as string);
+      expect(urls).toEqual([
+        'https://api.npmjs.org/downloads/point/last-month/react,vue',
         'https://api.npmjs.org/downloads/point/last-month/%40types%2Fnode',
-        expect.any(Object),
+        'https://api.npmjs.org/downloads/point/last-month/%40babel%2Fcore',
+      ]);
+      expect(Object.keys(result).sort()).toEqual(['@babel/core', '@types/node', 'react', 'vue']);
+      expect(result['@types/node']).toEqual(point('@types/node'));
+    });
+
+    it('wraps a single-package response, which npm returns as a plain point', async () => {
+      mockDownloadsByUrl();
+      const result = await npm.bulkDownloads(['react']);
+      expect(result).toEqual({ react: point('react') });
+    });
+
+    it('maps missing packages to null, in bulk and individually', async () => {
+      mockDownloadsByUrl();
+      const result = await npm.bulkDownloads(['react', 'missing-a', '@scope/missing-b']);
+      expect(result['missing-a']).toBeNull();
+      expect(result['@scope/missing-b']).toBeNull();
+      expect(result['react']).toEqual(point('react'));
+    });
+
+    it('splits more than 128 unscoped packages into batches of 128', async () => {
+      mockDownloadsByUrl();
+      const names = Array.from({ length: 300 }, (_, i) => `pkg-${i}`);
+      const result = await npm.bulkDownloads(names);
+      const sizes = mockFetch.mock.calls.map(
+        ([url]) => (url as string).split('/').pop()!.split(',').length,
       );
+      expect(sizes).toEqual([128, 128, 44]);
+      expect(Object.keys(result)).toHaveLength(300);
+    });
+
+    it('ignores duplicate package names', async () => {
+      mockDownloadsByUrl();
+      await npm.bulkDownloads(['react', 'vue', 'react']);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockFetch.mock.calls[0][0]).toBe(
+        'https://api.npmjs.org/downloads/point/last-month/react,vue',
+      );
+    });
+
+    it('returns an empty map without requests for an empty list', async () => {
+      await expect(npm.bulkDownloads([])).resolves.toEqual({});
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('propagates non-404 errors from individual lookups', async () => {
+      mockResponse({}, 503);
+      await expect(npm.bulkDownloads(['@types/node'])).rejects.toMatchObject({ status: 503 });
     });
 
     it('sends Authorization header to downloads API when token is provided', async () => {
@@ -552,14 +619,14 @@ describe('NpmClient', () => {
       );
     });
 
-    it('throws NpmApiError on non-2xx response', async () => {
+    it('throws NpmApiError on non-2xx bulk response', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        status: 404,
-        statusText: 'Not Found',
+        status: 400,
+        statusText: 'Bad Request',
         json: jest.fn(),
       });
-      await expect(npm.bulkDownloads(['nonexistent-xyz'])).rejects.toThrow(NpmApiError);
+      await expect(npm.bulkDownloads(['react', 'vue'])).rejects.toThrow(NpmApiError);
     });
   });
 

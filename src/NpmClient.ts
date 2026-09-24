@@ -21,6 +21,8 @@ const DEFAULT_JSDELIVR_URL = 'https://data.jsdelivr.com/v1';
 const DEFAULT_UNPKG_URL = 'https://unpkg.com';
 const DEFAULT_DEPS_DEV_URL = 'https://api.deps.dev/v3';
 const DEFAULT_TOP_PACKAGES_QUERY = 'keywords:javascript';
+/** Maximum number of packages npm accepts in one bulk downloads lookup. */
+const MAX_BULK_PACKAGES = 128;
 
 async function ignoreRejection(value: unknown): Promise<void> {
   try {
@@ -599,20 +601,24 @@ export class NpmClient {
   }
 
   /**
-   * Fetches the total download count for multiple packages in a single request.
+   * Fetches the total download count for multiple packages.
    *
    * `GET /downloads/point/{period}/{name1},{name2},...` (via api.npmjs.org)
    *
-   * @param packages - Array of package names to fetch downloads for (max 128)
+   * npm's bulk lookup accepts at most 128 unscoped packages, so unscoped names
+   * are sent in batches of 128, and each scoped package (`@scope/name`) is
+   * fetched with its own request.
+   *
+   * @param packages - Package names to fetch downloads for; duplicates are ignored
    * @param period - Named period or date range (default: `'last-month'`)
-   * @param signal - Optional `AbortSignal` to cancel the request
-   * @returns A map of package name to download point data
+   * @param signal - Optional `AbortSignal` to cancel the requests
+   * @returns A map of package name to download point data, or `null` for packages that do not exist
    *
    * @example
    * ```typescript
-   * const stats = await npm.bulkDownloads(['react', 'vue', 'angular']);
-   * console.log(stats['react'].downloads); // 18591460
-   * console.log(stats['vue'].downloads);   // 4200000
+   * const stats = await npm.bulkDownloads(['react', 'vue', '@angular/core']);
+   * console.log(stats['react']?.downloads);         // 18591460
+   * console.log(stats['@angular/core']?.downloads); // 1800000
    * ```
    */
   async bulkDownloads(
@@ -620,13 +626,41 @@ export class NpmClient {
     period: NpmDownloadPeriod = 'last-month',
     signal?: AbortSignal,
   ): Promise<NpmBulkDownloads> {
-    const names = packages.map(encodeURIComponent).join(',');
-    return this.request<NpmBulkDownloads>(
-      `/downloads/point/${period}/${names}`,
-      undefined,
-      'downloads',
-      signal,
-    );
+    const unique = [...new Set(packages)];
+    const scoped = unique.filter((name) => name.startsWith('@'));
+    const unscoped = unique.filter((name) => !name.startsWith('@'));
+    const batches: string[][] = [];
+    for (let i = 0; i < unscoped.length; i += MAX_BULK_PACKAGES) {
+      batches.push(unscoped.slice(i, i + MAX_BULK_PACKAGES));
+    }
+
+    const results = await Promise.all([
+      ...batches.map((batch) => this.bulkDownloadsBatch(batch, period, signal)),
+      ...scoped.map((name) => this.bulkDownloadsBatch([name], period, signal)),
+    ]);
+    return Object.assign({}, ...results) as NpmBulkDownloads;
+  }
+
+  /**
+   * Fetches one bulk lookup. npm answers a single package with a plain download
+   * point instead of a map, and a missing single package with a 404.
+   */
+  private async bulkDownloadsBatch(
+    names: string[],
+    period: NpmDownloadPeriod,
+    signal?: AbortSignal,
+  ): Promise<NpmBulkDownloads> {
+    const path = `/downloads/point/${period}/${names.map(encodeURIComponent).join(',')}`;
+    if (names.length > 1) {
+      return this.request<NpmBulkDownloads>(path, undefined, 'downloads', signal);
+    }
+    const [name] = names as [string];
+    try {
+      return { [name]: await this.request<NpmDownloadPoint>(path, undefined, 'downloads', signal) };
+    } catch (err) {
+      if (err instanceof NpmApiError && err.status === 404) return { [name]: null };
+      throw err;
+    }
   }
 
   /**

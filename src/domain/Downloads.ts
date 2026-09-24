@@ -86,9 +86,10 @@ export interface NpmVersionDownloadPoint {
 }
 
 /**
- * Download counts for multiple packages in a single request.
+ * Download counts for multiple packages.
  *
  * Returned by `GET /downloads/point/{period}/{name1},{name2},...`.
- * Keys are package names; values are the individual download point for each.
+ * Keys are package names; values are the individual download point for each,
+ * or `null` when the package does not exist.
  */
-export type NpmBulkDownloads = Record<string, NpmDownloadPoint>;
+export type NpmBulkDownloads = Record<string, NpmDownloadPoint | null>;

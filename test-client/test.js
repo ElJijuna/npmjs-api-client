@@ -226,6 +226,28 @@ async function regressions() {
     assert.ok(stats.total > 0, 'latest().cdnStats() should not be empty');
     console.log('[OK] latest().cdnStats() total hits:', stats.total);
   });
+
+  // 5. bulkDownloads() handles scoped packages, single packages, missing packages,
+  // and more than 128 names — npm's bulk endpoint rejects or reshapes all of these.
+  const mixed = await npm.bulkDownloads(
+    ['react', '@types/node', 'zzq-nonexistent-package-for-npmjs-api-client'],
+    'last-week',
+  );
+  assert.ok(mixed['react'].downloads > 0);
+  assert.ok(mixed['@types/node'].downloads > 0);
+  assert.equal(mixed['zzq-nonexistent-package-for-npmjs-api-client'], null);
+  console.log('[OK] bulkDownloads() mixes scoped/unscoped:', mixed['@types/node'].downloads);
+
+  const single = await npm.bulkDownloads(['react'], 'last-week');
+  assert.deepEqual(Object.keys(single), ['react']);
+  assert.ok(single['react'].downloads > 0);
+  console.log('[OK] bulkDownloads() with a single package returns a map');
+
+  const many = ['react', ...Array.from({ length: 129 }, (_, i) => `zzq-bulk-missing-${i}`)];
+  const batched = await npm.bulkDownloads(many, 'last-week');
+  assert.equal(Object.keys(batched).length, many.length);
+  assert.ok(batched['react'].downloads > 0);
+  console.log('[OK] bulkDownloads() splits', many.length, 'names into batches of 128');
 }
 
 try {

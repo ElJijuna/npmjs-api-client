@@ -131,13 +131,15 @@ console.log(versionStats.downloads);
 const stats = await npm.downloads('last-week', 'typescript');
 const range = await npm.downloadRange('last-month', 'typescript');
 
-// Bulk downloads — multiple packages in a single request
-const bulk = await npm.bulkDownloads(['react', 'vue', 'angular']);
+// Bulk downloads — unscoped packages are batched (128 per request),
+// scoped packages are fetched one request each
+const bulk = await npm.bulkDownloads(['react', 'vue', '@angular/core']);
 const bulk = await npm.bulkDownloads(['react', 'vue'], 'last-week');
 
-console.log(bulk['react'].downloads);   // 18591460
-console.log(bulk['vue'].downloads);     // 4200000
-console.log(bulk['angular'].downloads); // 1800000
+console.log(bulk['react']?.downloads);         // 18591460
+console.log(bulk['vue']?.downloads);           // 4200000
+console.log(bulk['@angular/core']?.downloads); // 1800000
+// Packages that do not exist map to null
 ```
 
 ### Quality score
