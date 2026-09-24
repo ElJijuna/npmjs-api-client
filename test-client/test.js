@@ -287,6 +287,26 @@ async function regressions() {
       return true;
     });
   });
+
+  // score() and the topBy* helpers are deprecated because npm stopped computing
+  // quality/popularity/maintenance and ignores ranking weights. Warn if that changes.
+  const [react] = (await npm.search({ text: 'react', size: 1 })).objects;
+  assert.ok(react.downloads.weekly > 0, 'search results should include downloads');
+  assert.ok(Number(react.dependents) > 0, 'search results should include dependents');
+  console.log(
+    '[OK] search results include downloads and dependents:',
+    react.downloads.weekly,
+    react.dependents,
+  );
+  const metricsAreConstant = Object.values(react.score.detail).every((value) => value === 1);
+  const names = async (fn) => (await fn(10)).objects.map((o) => o.package.name).join();
+  const weightsIgnored =
+    (await names((n) => npm.topPackages(n))) === (await names((n) => npm.topByPopularity(n)));
+  if (metricsAreConstant && weightsIgnored) {
+    console.log('[OK] npm still ignores search scores and weights: deprecations are accurate');
+  } else {
+    console.warn('[WARN] npm search scores or weights changed: revisit the score() deprecation');
+  }
 }
 
 try {

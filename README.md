@@ -14,7 +14,7 @@
 [![Node.js](https://img.shields.io/node/v/npmjs-api-client)](https://nodejs.org/)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://semver.org)
 
-TypeScript client for the npm ecosystem. Aggregates data from multiple sources into a single, chainable API — package metadata, download stats, quality scores, install size, CDN usage, file contents, and resolved dependency graphs. Works in **Node.js** and the **browser** (isomorphic). Fully typed, zero runtime dependencies.
+TypeScript client for the npm ecosystem. Aggregates data from multiple sources into a single, chainable API — package metadata, download stats, install size, CDN usage, file contents, and resolved dependency graphs. Works in **Node.js** and the **browser** (isomorphic). Fully typed, zero runtime dependencies.
 
 **Data sources integrated:**
 
@@ -142,23 +142,18 @@ console.log(bulk['@angular/core']?.downloads); // 1800000
 // Packages that do not exist map to null
 ```
 
-### Quality score
+### Quality score (deprecated)
 
-Returns the aggregate quality, popularity, and maintenance score for a package, read from the npm registry's own search index.
-
-> npms.io — which used to back this method and also exposed a detailed per-metric breakdown (test coverage, release frequency, community interest, etc.) — has been discontinued. Only the aggregate scores below remain available; there is no public replacement for the finer-grained breakdown.
+> **`score()` is deprecated.** npm no longer computes quality, popularity, or maintenance scores. Its search index now returns `1` for every metric in `score.detail`, and `score.final` is the search relevance of the package name — an unbounded number, not a 0–1 score. npms.io, which used to provide a detailed per-metric breakdown, has also been discontinued. There is no public replacement.
+>
+> For popularity signals, use download counts, or the `downloads` and `dependents` fields of [search](#search) results.
 
 ```typescript
 const score = await npm.package('react').score();
 
-// Composite score (0–1)
-console.log(score.score.final);                 // 0.97
-console.log(score.score.detail.quality);        // 0.95
-console.log(score.score.detail.popularity);     // 0.99
-console.log(score.score.detail.maintenance);    // 0.98
-
-// Date of the search index entry this score was read from
-console.log(score.analyzedAt); // '2024-01-01T00:00:00.000Z'
+console.log(score.score.final);            // 2467.3 — search relevance, not quality
+console.log(score.score.detail.quality);   // 1 — always 1
+console.log(score.analyzedAt);             // '2024-01-01T00:00:00.000Z'
 ```
 
 ### Install size — Packagephobia
@@ -322,28 +317,28 @@ Both methods support `AbortSignal` and emit a `request` event with `method: 'POS
 const results = await npm.search({ text: 'typescript client' });
 const results = await npm.search({ text: 'react hooks', size: 10, from: 0 });
 
-// Weighted search — tune quality/popularity/maintenance influence (0–1)
-const results = await npm.search({
-  text:        'logger',
-  size:        5,
-  quality:     0.5,
-  popularity:  0.8,
-  maintenance: 0.7,
-});
-
 results.objects.forEach(o => {
-  console.log(o.package.name, o.package.version, o.score.final);
+  console.log(
+    o.package.name,
+    o.package.version,
+    o.downloads?.weekly,  // downloads in the last 7 days
+    o.dependents,         // number of dependent packages, as a string: '216179'
+  );
 });
 console.log(results.total); // total matches
 
+// Rank the results by popularity yourself
+const byDownloads = [...results.objects].sort(
+  (a, b) => (b.downloads?.weekly ?? 0) - (a.downloads?.weekly ?? 0),
+);
+
 // Top package shortcuts
 const top = await npm.topPackages(10);
-const popular = await npm.topByPopularity(10);
-const quality = await npm.topByQuality(10);
-const maintained = await npm.topByMaintenance(10);
 const types = await npm.topByKeyword('typescript', 10);
 const scoped = await npm.topByScope('@types', 10);
 ```
+
+> npm ranks search results by text relevance only. The `quality`, `popularity`, and `maintenance` weights of `search()` and `maintainer().packages()` are ignored by npm and are deprecated. `topByPopularity()`, `topByQuality()`, and `topByMaintenance()` are deprecated too: they return the same results as `topPackages()`.
 
 ### Maintainer
 

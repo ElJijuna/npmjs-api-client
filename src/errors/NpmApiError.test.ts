@@ -37,6 +37,12 @@ describe('NpmApiError', () => {
     [{ error: 'package @zzq/nope not found' }, 'package @zzq/nope not found'],
     [{ error: { code: 'challenge', message: 'Challenge required.' } }, 'Challenge required.'],
     [{ message: 'Rate limit exceeded' }, 'Rate limit exceeded'],
+    // RFC 9457 problem details, as sent by Cloudflare's rate limiter.
+    [
+      { title: 'Error 1015: You are being rate limited', detail: 'You are being rate-limited.' },
+      'You are being rate-limited.',
+    ],
+    [{ title: 'Error 1015: You are being rate limited' }, 'Error 1015: You are being rate limited'],
     ['version not found: 99.99.99', 'version not found: 99.99.99'],
     ['  dependencies not found\n', 'dependencies not found'],
   ])('extracts the detail from %j', (body, detail) => {

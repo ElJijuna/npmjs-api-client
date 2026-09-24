@@ -231,13 +231,18 @@ export class PackageResource implements PromiseLike<NpmPackument> {
   }
 
   /**
-   * Fetches the quality, popularity, and maintenance score for this package.
+   * Fetches this package's entry score from the npm registry search index.
+   *
+   * @deprecated npm no longer computes quality, popularity, or maintenance
+   * scores: `score.detail` is always `1` for every metric, and `score.final` is
+   * the search relevance of the package name (e.g. `2467.3`), not a 0–1 quality
+   * score. Use {@link PackageResource.downloads} for popularity, or the
+   * `downloads` and `dependents` fields of {@link NpmClient.search} results.
    *
    * Sourced from the npm registry's own search index (`/-/v1/search`), since
-   * npms.io — which used to provide this along with a detailed per-metric
-   * breakdown — has been discontinued. Only the aggregate scores survive;
-   * `evaluation` is kept on the return type for backwards compatibility but is
-   * never populated.
+   * npms.io — which used to provide a detailed per-metric breakdown — has been
+   * discontinued. `evaluation` is kept on the return type for backwards
+   * compatibility but is never populated.
    *
    * `GET /-/v1/search?text={name}&size=1`
    *
@@ -249,7 +254,7 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * @example
    * ```typescript
    * const score = await npm.package('react').score();
-   * console.log(score.score.final); // 0.97
+   * console.log(score.score.final); // 2467.3 — search relevance, not quality
    * ```
    */
   async score(signal?: AbortSignal): Promise<NpmsScore> {

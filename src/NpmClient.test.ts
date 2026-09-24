@@ -1,5 +1,5 @@
 import { NpmClient, NpmApiError } from './index';
-import type { NpmClientOptions, NpmPackument } from './index';
+import type { NpmClientOptions, NpmPackument, NpmSearchObject } from './index';
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
@@ -98,6 +98,22 @@ describe('NpmClient', () => {
         'npm search requires a non-empty text query',
       );
       expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('exposes downloads, dependents, and updated from search results', async () => {
+      const object: NpmSearchObject = {
+        package: { name: 'react', scope: 'unscoped', version: '19.3.0' },
+        score: { final: 2467.3, detail: { quality: 1, popularity: 1, maintenance: 1 } },
+        searchScore: 2467.3,
+        downloads: { monthly: 632915294, weekly: 132703321 },
+        dependents: '216179',
+        updated: '2026-09-23T16:30:26.972Z',
+      };
+      mockResponse({ objects: [object], total: 1, time: '' });
+      const { objects } = await npm.search({ text: 'react', size: 1 });
+      expect(objects[0]?.downloads?.weekly).toBe(132703321);
+      expect(objects[0]?.dependents).toBe('216179');
+      expect(objects[0]?.updated).toBe('2026-09-23T16:30:26.972Z');
     });
   });
 

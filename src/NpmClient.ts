@@ -382,9 +382,8 @@ export class NpmClient {
    *
    * `GET /-/v1/search?text=keywords:javascript&size={n}`
    *
-   * The default npm ranking combines quality, popularity, and maintenance.
-   * npm requires a non-empty `text` query, so this helper uses a broad
-   * JavaScript keyword search.
+   * npm ranks results by search relevance. npm requires a non-empty `text`
+   * query, so this helper uses a broad JavaScript keyword search.
    *
    * @param n - Number of packages to return (default: 20, max: 250)
    * @param signal - Optional `AbortSignal` to cancel the request
@@ -393,7 +392,7 @@ export class NpmClient {
    * @example
    * ```typescript
    * const top = await npm.topPackages(10);
-   * top.objects.forEach(o => console.log(o.package.name, o.score.final));
+   * top.objects.forEach(o => console.log(o.package.name, o.downloads?.weekly));
    * ```
    */
   async topPackages(n = 20, signal?: AbortSignal): Promise<NpmSearchResult> {
@@ -402,6 +401,10 @@ export class NpmClient {
 
   /**
    * Returns top packages ranked by popularity.
+   *
+   * @deprecated npm's search API ignores ranking weights, so this returns the
+   * same results as {@link NpmClient.topPackages}. To rank by popularity, sort
+   * search results by their `downloads` field.
    *
    * `GET /-/v1/search?text=keywords:javascript&size={n}&popularity=1&quality=0&maintenance=0`
    *
@@ -419,6 +422,10 @@ export class NpmClient {
   /**
    * Returns top packages ranked by quality.
    *
+   * @deprecated npm's search API ignores ranking weights, so this returns the
+   * same results as {@link NpmClient.topPackages}. To rank by popularity, sort
+   * search results by their `downloads` field.
+   *
    * `GET /-/v1/search?text=keywords:javascript&size={n}&quality=1&popularity=0&maintenance=0`
    *
    * @param n - Number of packages to return (default: 20, max: 250)
@@ -434,6 +441,10 @@ export class NpmClient {
 
   /**
    * Returns top packages ranked by maintenance.
+   *
+   * @deprecated npm's search API ignores ranking weights, so this returns the
+   * same results as {@link NpmClient.topPackages}. To rank by popularity, sort
+   * search results by their `downloads` field.
    *
    * `GET /-/v1/search?text=keywords:javascript&size={n}&maintenance=1&quality=0&popularity=0`
    *

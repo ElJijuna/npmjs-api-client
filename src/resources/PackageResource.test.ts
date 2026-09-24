@@ -435,7 +435,8 @@ describe('PackageResource', () => {
               version: '1.0.0',
               date: '2024-01-01T00:00:00.000Z',
             },
-            score: { final: 0.97, detail: { quality: 0.95, popularity: 0.99, maintenance: 0.98 } },
+            // npm now returns search relevance as `final` and 1 for every detail metric.
+            score: { final: 2467.3, detail: { quality: 1, popularity: 1, maintenance: 1 } },
             searchScore: 100000,
           },
         ],
@@ -447,8 +448,8 @@ describe('PackageResource', () => {
     it('fetches the aggregate score from registry search', async () => {
       mockResponse(searchFixture('react'));
       const result = await npm.package('react').score();
-      expect(result.score.final).toBe(0.97);
-      expect(result.score.detail).toEqual({ quality: 0.95, popularity: 0.99, maintenance: 0.98 });
+      expect(result.score.final).toBe(2467.3);
+      expect(result.score.detail).toEqual({ quality: 1, popularity: 1, maintenance: 1 });
       expect(result.analyzedAt).toBe('2024-01-01T00:00:00.000Z');
     });
 

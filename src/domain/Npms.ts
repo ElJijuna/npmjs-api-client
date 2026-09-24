@@ -31,6 +31,10 @@ export interface NpmsEvaluation {
   maintenance: NpmsMaintenanceEvaluation;
 }
 
+/**
+ * Returned by {@link PackageResource.score}. npm no longer computes these
+ * scores: `score.detail` is always `1`, and `score.final` is search relevance.
+ */
 export interface NpmsScore {
   /**
    * Timestamp of the underlying registry search index entry this score was read from.

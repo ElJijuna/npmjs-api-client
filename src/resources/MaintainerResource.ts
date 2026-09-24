@@ -12,11 +12,11 @@ export interface MaintainerPackagesParams {
   size?: number;
   /** Offset for pagination */
   from?: number;
-  /** Weight for quality in final score (0–1) */
+  /** @deprecated npm's search API no longer applies ranking weights; results are ordered by text relevance only. Still sent, for registries that honor it. */
   quality?: number;
-  /** Weight for popularity in final score (0–1) */
+  /** @deprecated npm's search API no longer applies ranking weights; results are ordered by text relevance only. Still sent, for registries that honor it. */
   popularity?: number;
-  /** Weight for maintenance in final score (0–1) */
+  /** @deprecated npm's search API no longer applies ranking weights; results are ordered by text relevance only. Still sent, for registries that honor it. */
   maintenance?: number;
 }
 

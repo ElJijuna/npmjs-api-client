@@ -56,7 +56,8 @@ export class NpmApiError extends Error {
 /**
  * Finds the error message in the body shapes returned by the supported APIs:
  * `{ error: '...' }`, `{ error: { message: '...' } }`, `{ message: '...' }`,
- * a JSON string, or plain text. HTML error pages are ignored.
+ * RFC 9457 problem details (`{ title, detail }`, sent by Cloudflare when rate
+ * limiting), a JSON string, or plain text. HTML error pages are ignored.
  */
 function extractDetail(body: unknown): string | undefined {
   if (typeof body === 'string') {
@@ -65,9 +66,11 @@ function extractDetail(body: unknown): string | undefined {
     return text.length > MAX_DETAIL_LENGTH ? `${text.slice(0, MAX_DETAIL_LENGTH)}…` : text;
   }
   if (typeof body !== 'object' || body === null) return undefined;
-  const { error, message } = body as { error?: unknown; message?: unknown };
+  const { error, message, detail, title } = body as Record<string, unknown>;
   if (typeof error === 'string') return extractDetail(error);
   if (typeof error === 'object' && error !== null) return extractDetail(error);
-  if (typeof message === 'string') return extractDetail(message);
+  for (const text of [message, detail, title]) {
+    if (typeof text === 'string') return extractDetail(text);
+  }
   return undefined;
 }

@@ -12,6 +12,9 @@ export interface NpmPackageLinks {
 
 /**
  * Score breakdown for a package in search results.
+ *
+ * npm no longer computes these metrics: every field is always `1`. Use
+ * {@link NpmSearchObject.downloads} and {@link NpmSearchObject.dependents} instead.
  */
 export interface NpmScoreDetail {
   quality: number;
@@ -23,6 +26,11 @@ export interface NpmScoreDetail {
  * Score entry for a package in search results.
  */
 export interface NpmScore {
+  /**
+   * Search relevance of the package for the query — the same value as
+   * {@link NpmSearchObject.searchScore}. Unbounded (e.g. `2467.3`), not a 0–1
+   * quality score, and only comparable between results of the same search.
+   */
   final: number;
   detail: NpmScoreDetail;
 }
@@ -49,7 +57,22 @@ export interface NpmSearchPackage {
 export interface NpmSearchObject {
   package: NpmSearchPackage;
   score: NpmScore;
+  /** Search relevance of the package for the query */
   searchScore: number;
+  /** Download counts for the package. Not returned by every registry. */
+  downloads?: {
+    /** Downloads over the last 30 days */
+    monthly: number;
+    /** Downloads over the last 7 days */
+    weekly: number;
+  };
+  /**
+   * Number of packages that depend on this one, as a numeric string
+   * (e.g. `'216179'`). Not returned by every registry.
+   */
+  dependents?: string;
+  /** When the search index entry was last updated (ISO 8601). Not returned by every registry. */
+  updated?: string;
   /** Present when the package is flagged as insecure */
   flags?: { insecure?: number };
 }
@@ -73,10 +96,10 @@ export interface NpmSearchParams {
   size?: number;
   /** Offset for pagination */
   from?: number;
-  /** Weight for quality in final score (0–1) */
+  /** @deprecated npm's search API no longer applies ranking weights; results are ordered by text relevance only. Still sent, for registries that honor it. */
   quality?: number;
-  /** Weight for popularity in final score (0–1) */
+  /** @deprecated npm's search API no longer applies ranking weights; results are ordered by text relevance only. Still sent, for registries that honor it. */
   popularity?: number;
-  /** Weight for maintenance in final score (0–1) */
+  /** @deprecated npm's search API no longer applies ranking weights; results are ordered by text relevance only. Still sent, for registries that honor it. */
   maintenance?: number;
 }
