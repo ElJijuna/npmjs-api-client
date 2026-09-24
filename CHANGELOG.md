@@ -1,3 +1,10 @@
+## [1.10.2](https://github.com/ElJijuna/npmjs-api-client/compare/v1.10.1...v1.10.2) (2026-09-24)
+
+
+### Bug Fixes
+
+* update README and code to reflect deprecation of quality, popularity, and maintenance scores; enhance tests for search results ([b5aa148](https://github.com/ElJijuna/npmjs-api-client/commit/b5aa148ae947e2912d64dcc5430a4e3a6e74a04c))
+
 ## [1.10.1](https://github.com/ElJijuna/npmjs-api-client/compare/v1.10.0...v1.10.1) (2026-09-24)
 
 
