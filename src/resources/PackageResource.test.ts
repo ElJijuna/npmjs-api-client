@@ -415,6 +415,16 @@ describe('PackageResource', () => {
       await expect(npm.package('nonexistent-pkg-xyz').score()).rejects.toThrow(NpmApiError);
     });
 
+    it('throws a 404 instead of returning a different package when there is no exact match', async () => {
+      // Deprecated packages such as `lodash.get` are excluded from search,
+      // which then returns a fuzzy match like `@types/lodash.get`.
+      mockResponse(searchFixture('@types/lodash.get'));
+      await expect(npm.package('lodash.get').score()).rejects.toMatchObject({
+        name: 'NpmApiError',
+        status: 404,
+      });
+    });
+
     it('sends the Authorization header when a token is configured', async () => {
       const authedNpm = new NpmClient({ token: 'secret' });
       mockResponse(searchFixture('react'));

@@ -237,6 +237,7 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * @param signal - Optional `AbortSignal` to cancel the request
    * @returns Aggregate score data
    * @throws {NpmApiError} with status 404 if the package has no search entry
+   * (e.g. it does not exist, or it is deprecated and excluded from search)
    *
    * @example
    * ```typescript
@@ -251,7 +252,8 @@ export class PackageResource implements PromiseLike<NpmPackument> {
       'registry',
       signal,
     );
-    const match = result.objects.find((o) => o.package.name === this.name) ?? result.objects[0];
+    // Search is fuzzy: never fall back to another package's score.
+    const match = result.objects.find((o) => o.package.name === this.name);
     if (!match) {
       throw new NpmApiError(404, `No search results for package "${this.name}"`);
     }
