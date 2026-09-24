@@ -481,6 +481,14 @@ npm.on('request', (event) => {
 | `statusCode` | `number \| undefined` | HTTP status code, if a response was received |
 | `error` | `Error \| undefined` | Present only if the request failed |
 
+Remove a listener with `off()`, passing the same function given to `on()`:
+
+```typescript
+const log = (event: RequestEvent) => console.log(event.url);
+npm.on('request', log);
+npm.off('request', log);
+```
+
 Multiple listeners can be registered. Listener exceptions and rejected promises are isolated: they do not change the request result or prevent other listeners from running. Async listeners are not awaited. Each listener is responsible for logging or handling its own errors. The event is always emitted after the request completes, whether it succeeded or failed. Events are emitted for all data sources — registry, downloads, packagephobia, jsDelivr, unpkg, and deps.dev.
 
 ---

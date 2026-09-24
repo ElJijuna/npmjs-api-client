@@ -244,6 +244,77 @@ describe('NpmClient', () => {
     });
   });
 
+  describe('off()', () => {
+    const packument = { name: 'react', 'dist-tags': {}, versions: {}, time: {} };
+
+    it('stops calling a removed listener', async () => {
+      const listener = jest.fn();
+      npm.on('request', listener);
+      mockResponse(packument);
+      await npm.package('react').get();
+      npm.off('request', listener);
+      mockResponse(packument);
+      await npm.package('react').get();
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps other listeners registered', async () => {
+      const removed = jest.fn();
+      const kept = jest.fn();
+      npm.on('request', removed).on('request', kept).off('request', removed);
+      mockResponse(packument);
+      await npm.package('react').get();
+      expect(removed).not.toHaveBeenCalled();
+      expect(kept).toHaveBeenCalledTimes(1);
+    });
+
+    it('removes only one registration of a listener added twice', async () => {
+      const listener = jest.fn();
+      npm.on('request', listener).on('request', listener).off('request', listener);
+      mockResponse(packument);
+      await npm.package('react').get();
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores listeners that were never registered', async () => {
+      const listener = jest.fn();
+      npm.on('request', listener);
+      expect(npm.off('request', jest.fn())).toBe(npm);
+      expect(new NpmClient().off('request', listener)).toBeInstanceOf(NpmClient);
+      mockResponse(packument);
+      await npm.package('react').get();
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not affect an emission in progress', async () => {
+      const second = jest.fn();
+      const first = jest.fn(() => {
+        npm.off('request', first).off('request', second);
+      });
+      npm.on('request', first).on('request', second);
+      mockResponse(packument);
+      await npm.package('react').get();
+      mockResponse(packument);
+      await npm.package('react').get();
+      expect(first).toHaveBeenCalledTimes(1);
+      expect(second).toHaveBeenCalledTimes(1);
+    });
+
+    it('lets a listener added during an emission run from the next request', async () => {
+      const late = jest.fn();
+      const once = jest.fn(() => {
+        npm.off('request', once).on('request', late);
+      });
+      npm.on('request', once);
+      mockResponse(packument);
+      await npm.package('react').get();
+      expect(late).not.toHaveBeenCalled();
+      mockResponse(packument);
+      await npm.package('react').get();
+      expect(late).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('AbortSignal', () => {
     it('passes signal to fetch on search()', async () => {
       mockResponse({ objects: [], total: 0, time: '' });

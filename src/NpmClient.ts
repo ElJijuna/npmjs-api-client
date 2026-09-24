@@ -201,8 +201,34 @@ export class NpmClient {
    */
   on<K extends keyof NpmClientEvents>(event: K, callback: NpmClientEvents[K]): this {
     const callbacks = this.listeners.get(event) ?? [];
-    callbacks.push(callback);
-    this.listeners.set(event, callbacks);
+    // Replace rather than mutate, so an emission in progress is unaffected.
+    this.listeners.set(event, [...callbacks, callback]);
+    return this;
+  }
+
+  /**
+   * Unsubscribes a callback previously registered with {@link NpmClient.on}.
+   * If the callback was registered more than once, only the most recent
+   * registration is removed. Unknown callbacks are ignored.
+   *
+   * Removing a listener while an event is being emitted does not affect that
+   * emission; the change applies from the next request.
+   *
+   * @example
+   * ```typescript
+   * const log = (event: RequestEvent) => console.log(event.url);
+   * npm.on('request', log);
+   * // ...
+   * npm.off('request', log);
+   * ```
+   */
+  off<K extends keyof NpmClientEvents>(event: K, callback: NpmClientEvents[K]): this {
+    const callbacks = this.listeners.get(event);
+    const index = callbacks?.lastIndexOf(callback) ?? -1;
+    if (!callbacks || index === -1) return this;
+    const remaining = callbacks.filter((_, i) => i !== index);
+    if (remaining.length > 0) this.listeners.set(event, remaining);
+    else this.listeners.delete(event);
     return this;
   }
 

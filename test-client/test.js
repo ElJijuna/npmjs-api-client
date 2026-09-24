@@ -255,6 +255,16 @@ async function regressions() {
   const publishTimes = expressVersions.map((v) => Date.parse(expressPackument.time[v.version]));
   assert.ok(publishTimes.every((t, i) => i === 0 || publishTimes[i - 1] <= t));
   console.log('[OK] versions() in publication order, last:', expressVersions.at(-1).version);
+
+  // off() removes a listener registered with on().
+  const seenUrls = [];
+  const listener = (event) => seenUrls.push(event.url);
+  const observed = new NpmClient().on('request', listener);
+  await observed.package('typescript').distTags();
+  observed.off('request', listener);
+  await observed.package('typescript').distTags();
+  assert.equal(seenUrls.length, 1);
+  console.log('[OK] off() stops request events:', seenUrls[0]);
 }
 
 try {
