@@ -238,4 +238,84 @@ describe('VersionResource — new methods', () => {
       );
     });
   });
+
+  describe('dist-tag resolution', () => {
+    const distTags = { latest: '18.2.0', next: '19.0.0-rc.1' };
+
+    function mockByUrl(responses: Record<string, unknown>): void {
+      mockFetch.mockImplementation(async (url: string) => {
+        const key = Object.keys(responses).find((part) => url.includes(part));
+        if (!key)
+          return { ok: false, status: 404, statusText: 'Not Found', json: async () => ({}) };
+        return { ok: true, status: 200, statusText: 'OK', json: async () => responses[key] };
+      });
+    }
+
+    afterEach(() => mockFetch.mockReset());
+
+    it('resolves latest before reading per-version downloads', async () => {
+      mockByUrl({
+        '/dist-tags': distTags,
+        '/versions/react/last-week': { package: 'react', downloads: { '18.2.0': 1234 } },
+      });
+      const result = await npm.package('react').latest().downloads();
+      expect(result).toEqual({
+        downloads: 1234,
+        package: 'react',
+        version: '18.2.0',
+        period: 'last-week',
+      });
+    });
+
+    it('resolves a dist-tag before querying jsDelivr stats', async () => {
+      mockByUrl({ '/dist-tags': distTags, 'data.jsdelivr.com': { total: 1, files: {} } });
+      await npm.package('react').version('next').cdnStats();
+      const urls = mockFetch.mock.calls.map(([url]) => url as string);
+      expect(urls).toContain(
+        'https://data.jsdelivr.com/v1/package/npm/react@19.0.0-rc.1/stats/file/month',
+      );
+    });
+
+    it('resolves a dist-tag before querying deps.dev', async () => {
+      mockByUrl({ '/dist-tags': distTags, 'api.deps.dev': { nodes: [], edges: [] } });
+      await npm.package('@types/node').latest().dependencies();
+      const urls = mockFetch.mock.calls.map(([url]) => url as string);
+      expect(urls).toEqual([
+        'https://registry.npmjs.org/-/package/%40types%2Fnode/dist-tags',
+        'https://api.deps.dev/v3/systems/npm/packages/%40types%2Fnode/versions/18.2.0:dependencies',
+      ]);
+    });
+
+    it('does not fetch dist-tags for exact versions', async () => {
+      mockByUrl({ 'api.deps.dev': { nodes: [], edges: [] } });
+      await npm.package('react').version('19.0.0-rc.1+build.5').dependencies();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws a 404 for an unknown dist-tag', async () => {
+      mockByUrl({ '/dist-tags': distTags });
+      await expect(npm.package('react').version('canary').dependencies()).rejects.toMatchObject({
+        name: 'NpmApiError',
+        status: 404,
+      });
+    });
+
+    it('does not resolve dist-tags from the object prototype', async () => {
+      mockByUrl({ '/dist-tags': distTags });
+      await expect(npm.package('react').version('constructor').cdnStats()).rejects.toMatchObject({
+        status: 404,
+      });
+    });
+
+    it('passes the signal to the dist-tags request', async () => {
+      mockByUrl({ '/dist-tags': distTags, 'api.deps.dev': { nodes: [], edges: [] } });
+      const controller = new AbortController();
+      await npm.package('react').latest().dependencies(controller.signal);
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('/dist-tags'),
+        expect.objectContaining({ signal: controller.signal }),
+      );
+    });
+  });
 });

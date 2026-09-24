@@ -8,7 +8,12 @@ import type { PackagephobiaSize } from '../domain/Packagephobia';
 import type { JsdelivrStats, JsdelivrGroupBy, JsdelivrPeriod } from '../domain/Jsdelivr';
 import type { UnpkgFile } from '../domain/Unpkg';
 import type { DepsDevDependencies } from '../domain/DepsDev';
+import type { NpmDistTags } from '../domain/DistTag';
+import { NpmApiError } from '../errors/NpmApiError';
 import type { RequestFn } from './types';
+
+/** Exact semver version, e.g. `18.2.0` or `19.0.0-rc.1+build.5`. */
+const EXACT_VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 export type { RequestFn };
 
@@ -68,6 +73,7 @@ export class VersionResource implements PromiseLike<NpmPackageVersion> {
    * Fetches the download count for this specific version over the previous 7 days.
    *
    * npm exposes version-level download counts only for `last-week`.
+   * A dist-tag (e.g. `'latest'`) is first resolved to the version it points to.
    *
    * `GET /versions/{package}/last-week` (via api.npmjs.org)
    *
@@ -89,17 +95,20 @@ export class VersionResource implements PromiseLike<NpmPackageVersion> {
       throw new RangeError("Version downloads are only available for 'last-week'.");
     }
 
-    const stats = await this.request<NpmVersionDownloads>(
-      `/versions/${encodeURIComponent(this.packageName)}/${period}`,
-      undefined,
-      'downloads',
-      signal,
-    );
+    const [version, stats] = await Promise.all([
+      this.resolveVersion(signal),
+      this.request<NpmVersionDownloads>(
+        `/versions/${encodeURIComponent(this.packageName)}/${period}`,
+        undefined,
+        'downloads',
+        signal,
+      ),
+    ]);
 
     return {
-      downloads: stats.downloads[this.ver] ?? 0,
+      downloads: stats.downloads[version] ?? 0,
       package: stats.package,
-      version: this.ver,
+      version,
       period,
     };
   }
@@ -159,6 +168,7 @@ export class VersionResource implements PromiseLike<NpmPackageVersion> {
    *
    * At version level, results are grouped by file by default, showing which
    * individual files are most requested from browsers in production.
+   * A dist-tag (e.g. `'latest'`) is first resolved to the version it points to.
    *
    * `GET /package/npm/{name}@{version}/stats/{groupBy}/{period}` (via data.jsdelivr.com/v1)
    *
@@ -178,8 +188,9 @@ export class VersionResource implements PromiseLike<NpmPackageVersion> {
     period: JsdelivrPeriod = 'month',
     signal?: AbortSignal,
   ): Promise<JsdelivrStats> {
+    const version = await this.resolveVersion(signal);
     return this.request<JsdelivrStats>(
-      `/package/npm/${encodeURIComponent(this.packageName)}@${encodeURIComponent(this.ver)}/stats/${groupBy}/${period}`,
+      `/package/npm/${encodeURIComponent(this.packageName)}@${encodeURIComponent(version)}/stats/${groupBy}/${period}`,
       undefined,
       'jsdelivr',
       signal,
@@ -191,6 +202,7 @@ export class VersionResource implements PromiseLike<NpmPackageVersion> {
    *
    * Unlike the semver ranges in `package.json`, this returns exact resolved versions
    * for every direct and transitive dependency, along with the dependency graph edges.
+   * A dist-tag (e.g. `'latest'`) is first resolved to the version it points to.
    *
    * `GET /systems/npm/packages/{name}/versions/{version}:dependencies` (via api.deps.dev/v3)
    *
@@ -205,11 +217,35 @@ export class VersionResource implements PromiseLike<NpmPackageVersion> {
    * ```
    */
   async dependencies(signal?: AbortSignal): Promise<DepsDevDependencies> {
+    const version = await this.resolveVersion(signal);
     return this.request<DepsDevDependencies>(
-      `/systems/npm/packages/${encodeURIComponent(this.packageName)}/versions/${encodeURIComponent(this.ver)}:dependencies`,
+      `/systems/npm/packages/${encodeURIComponent(this.packageName)}/versions/${encodeURIComponent(version)}:dependencies`,
       undefined,
       'depsdev',
       signal,
     );
+  }
+
+  /**
+   * Resolves a dist-tag to the exact version it points to. jsDelivr stats,
+   * deps.dev, and per-version downloads only understand exact versions, and
+   * answer a tag with empty data or a 404 instead of an error.
+   */
+  private async resolveVersion(signal?: AbortSignal): Promise<string> {
+    if (EXACT_VERSION.test(this.ver)) return this.ver;
+    const tags = await this.request<NpmDistTags>(
+      `/-/package/${encodeURIComponent(this.packageName)}/dist-tags`,
+      undefined,
+      undefined,
+      signal,
+    );
+    const version = Object.hasOwn(tags, this.ver) ? tags[this.ver] : undefined;
+    if (!version) {
+      throw new NpmApiError(
+        404,
+        `Unknown dist-tag "${this.ver}" for package "${this.packageName}"`,
+      );
+    }
+    return version;
   }
 }

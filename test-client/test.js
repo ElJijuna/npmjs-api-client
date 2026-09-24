@@ -1,4 +1,5 @@
-import { NpmClient } from '../dist/index.js';
+import assert from 'node:assert/strict';
+import { NpmApiError, NpmClient } from '../dist/index.js';
 
 const npm = new NpmClient();
 
@@ -6,6 +7,8 @@ async function checkExternal(name, operation) {
   try {
     await operation();
   } catch (error) {
+    // A failed assertion is a regression, not an unavailable service.
+    if (error instanceof assert.AssertionError) throw error;
     const detail = error instanceof Error ? error.message : String(error);
     console.warn(`[SKIP] ${name}: ${detail}`);
   }
@@ -157,6 +160,72 @@ async function test() {
 
   const auditQuick = await npm.auditQuick(auditPayload);
   console.log('Audit quick vulnerabilities:', auditQuick.metadata.vulnerabilities);
+
+  await regressions();
+}
+
+/** Live checks for bugs fixed after the project review. */
+async function regressions() {
+  console.log('\n--- Regression checks ---');
+
+  // 1. maintainer().info()/avatar() return the requested user, not the package publisher.
+  // isaacs' top search result is published by a co-maintainer.
+  const [top] = (await npm.maintainer('isaacs').packages({ size: 1 })).objects;
+  const isaacs = top.package.maintainers.find((m) => m.username === 'isaacs');
+  const isaacsInfo = await npm.maintainer('isaacs').info();
+  assert.deepEqual(isaacsInfo, { name: 'isaacs', email: isaacs.email });
+  const avatar = await npm.maintainer('isaacs').avatar();
+  assert.equal(avatar === undefined, isaacs.email === undefined);
+  console.log('[OK] maintainer info/avatar use the maintainer, not the publisher:', isaacsInfo);
+
+  // 2. score() throws 404 instead of returning a fuzzy match's score.
+  // lodash.get is deprecated and excluded from search, which returns @types/lodash.get.
+  for (const name of ['lodash.get', 'zzq-nonexistent-package-for-npmjs-api-client']) {
+    await assert.rejects(npm.package(name).score(), (error) => {
+      assert.ok(error instanceof NpmApiError);
+      assert.equal(error.status, 404);
+      return true;
+    });
+  }
+  console.log('[OK] score() rejects with 404 when there is no exact match');
+
+  // 3. A private registry token is never sent to api.npmjs.org.
+  const realFetch = globalThis.fetch;
+  const sent = [];
+  globalThis.fetch = (url, init) => {
+    sent.push({ host: new URL(url).host, authorization: init?.headers?.Authorization });
+    return realFetch(url, init);
+  };
+  try {
+    const privateNpm = new NpmClient({
+      registryUrl: 'https://my-registry.example.com',
+      token: 'private-registry-token',
+    });
+    await privateNpm.downloads('last-week', 'typescript');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.deepEqual(sent, [{ host: 'api.npmjs.org', authorization: undefined }]);
+  console.log('[OK] private registry token not sent to api.npmjs.org');
+
+  // 4. Dist-tags are resolved before calling APIs that only accept exact versions.
+  const { latest: latestVersion } = await npm.package('typescript').distTags();
+  const latestDownloads = await npm.package('typescript').latest().downloads();
+  assert.equal(latestDownloads.version, latestVersion);
+  assert.ok(latestDownloads.downloads > 0, 'latest().downloads() should not be 0');
+  console.log('[OK] latest().downloads():', latestDownloads.version, latestDownloads.downloads);
+
+  await checkExternal('deps.dev latest() dependencies', async () => {
+    const deps = await npm.package('react').latest().dependencies();
+    assert.ok(deps.nodes.length > 0, 'latest().dependencies() should include the package itself');
+    console.log('[OK] latest().dependencies() nodes:', deps.nodes.length);
+  });
+
+  await checkExternal('jsDelivr latest() stats', async () => {
+    const stats = await npm.package('react').latest().cdnStats();
+    assert.ok(stats.total > 0, 'latest().cdnStats() should not be empty');
+    console.log('[OK] latest().cdnStats() total hits:', stats.total);
+  });
 }
 
 try {
