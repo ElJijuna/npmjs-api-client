@@ -495,21 +495,30 @@ Multiple listeners can be registered. Listener exceptions and rejected promises 
 
 ## Error handling
 
-Non-2xx responses throw an `NpmApiError` with the HTTP status code and status text:
+Non-2xx responses throw an `NpmApiError` with the HTTP status code, status text, and the response body. When the body explains the failure, `detail` holds that reason and it is appended to `message`:
 
 ```typescript
 import { NpmApiError } from 'npmjs-api-client';
 
 try {
-  await npm.package('nonexistent-xyz').get();
+  await npm.search({ text: 'a' });
 } catch (err) {
   if (err instanceof NpmApiError) {
-    console.log(err.status);     // 404
-    console.log(err.statusText); // 'Not Found'
-    console.log(err.message);    // 'npm API error: 404 Not Found'
+    console.log(err.status);     // 400
+    console.log(err.statusText); // '' — often empty, see below
+    console.log(err.detail);     // "The 'text' parameter must be between 2 and 64 characters"
+    console.log(err.body);       // { error: "The 'text' parameter ...", code: 'ERR_TEXT_LENGTH' }
+    console.log(err.message);    // "npm API error: 400 — The 'text' parameter ..."
   }
 }
 ```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | `number` | HTTP status code |
+| `statusText` | `string` | HTTP status text; often empty, since many servers (and HTTP/2) do not send one |
+| `body` | `unknown` | Parsed JSON body, or raw text when the body is not JSON |
+| `detail` | `string \| undefined` | Reason extracted from the body, when there is one |
 
 ---
 

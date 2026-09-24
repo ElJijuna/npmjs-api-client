@@ -265,6 +265,28 @@ async function regressions() {
   await observed.package('typescript').distTags();
   assert.equal(seenUrls.length, 1);
   console.log('[OK] off() stops request events:', seenUrls[0]);
+
+  // NpmApiError carries the response body and the reason it gives.
+  await assert.rejects(npm.search({ text: 'a' }), (error) => {
+    assert.ok(error instanceof NpmApiError);
+    assert.equal(error.status, 400);
+    assert.equal(error.body.code, 'ERR_TEXT_LENGTH');
+    assert.match(error.detail, /between 2 and 64 characters/);
+    assert.match(error.message, /^npm API error: 400( \S.*)? — The 'text' parameter/);
+    console.log('[OK] NpmApiError JSON body:', error.message);
+    return true;
+  });
+
+  await checkExternal('deps.dev plain-text error body', async () => {
+    await assert.rejects(npm.package('react').version('0.0.0').dependencies(), (error) => {
+      assert.ok(error instanceof NpmApiError);
+      assert.equal(error.status, 404);
+      assert.equal(typeof error.body, 'string');
+      assert.ok(error.detail);
+      console.log('[OK] NpmApiError plain-text body:', error.message);
+      return true;
+    });
+  });
 }
 
 try {

@@ -300,7 +300,7 @@ export class NpmClient {
       const response = await fetch(url, init);
       statusCode = response.status;
       if (!response.ok) {
-        throw new NpmApiError(response.status, response.statusText);
+        throw new NpmApiError(response.status, response.statusText, await readBody(response));
       }
       return (await response.json()) as T;
     } catch (err) {
@@ -785,6 +785,25 @@ export class NpmClient {
    */
   async auditQuick(payload: NpmAuditPayload, signal?: AbortSignal): Promise<NpmAuditQuickResult> {
     return this.post<NpmAuditQuickResult>('/-/npm/v1/security/audits/quick', payload, signal);
+  }
+}
+
+/**
+ * Reads an error response body as JSON, falling back to text. Never throws:
+ * a body that cannot be read must not replace the HTTP error.
+ * @internal
+ */
+async function readBody(response: Response): Promise<unknown> {
+  try {
+    const text = await response.text();
+    if (!text) return undefined;
+    try {
+      return JSON.parse(text) as unknown;
+    } catch {
+      return text;
+    }
+  } catch {
+    return undefined;
   }
 }
 

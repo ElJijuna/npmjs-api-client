@@ -108,3 +108,52 @@ it.each([
     dependencies: {},
   });
 });
+
+describe('error response bodies', () => {
+  const errorResponse = (text: () => Promise<string>) => ({
+    ok: false,
+    status: 400,
+    statusText: 'Bad Request',
+    text,
+  });
+
+  it.each([
+    [
+      'JSON',
+      '{"error":"scoped packages are not currently supported"}',
+      {
+        error: 'scoped packages are not currently supported',
+      },
+    ],
+    ['plain text', 'dependencies not found', 'dependencies not found'],
+    ['empty', '', undefined],
+  ])('attaches a %s body to NpmApiError', async (_, text, body) => {
+    mockFetch.mockResolvedValueOnce(errorResponse(async () => text));
+    await expect(new NpmClient().package('react').get()).rejects.toMatchObject({
+      name: 'NpmApiError',
+      body,
+    });
+  });
+
+  it('keeps the HTTP error when the body cannot be read', async () => {
+    mockFetch.mockResolvedValueOnce(
+      errorResponse(async () => {
+        throw new TypeError('Body is unusable');
+      }),
+    );
+    await expect(new NpmClient().package('react').get()).rejects.toMatchObject({
+      name: 'NpmApiError',
+      status: 400,
+      body: undefined,
+    });
+  });
+
+  it('reports the detailed error in the request event', async () => {
+    mockFetch.mockResolvedValueOnce(errorResponse(async () => '{"error":"invalid period"}'));
+    const client = new NpmClient();
+    const events: RequestEvent[] = [];
+    client.on('request', (event) => events.push(event));
+    await expect(client.downloads('last-week', 'react')).rejects.toThrow(NpmApiError);
+    expect(events[0]?.error?.message).toBe('npm API error: 400 Bad Request — invalid period');
+  });
+});
