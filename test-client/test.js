@@ -248,6 +248,13 @@ async function regressions() {
   assert.equal(Object.keys(batched).length, many.length);
   assert.ok(batched['react'].downloads > 0);
   console.log('[OK] bulkDownloads() splits', many.length, 'names into batches of 128');
+
+  // versions() is sorted by publication time. express publishes 4.x backports after 5.x.
+  const expressPackument = await npm.package('express');
+  const expressVersions = await npm.package('express').versions();
+  const publishTimes = expressVersions.map((v) => Date.parse(expressPackument.time[v.version]));
+  assert.ok(publishTimes.every((t, i) => i === 0 || publishTimes[i - 1] <= t));
+  console.log('[OK] versions() in publication order, last:', expressVersions.at(-1).version);
 }
 
 try {

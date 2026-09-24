@@ -107,7 +107,8 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * Fetches all published versions of this package as an ordered array.
    *
    * Internally fetches the packument and converts the `versions` map to an array
-   * sorted from oldest to newest.
+   * sorted from oldest to newest by publication time (`packument.time`). Versions
+   * without a publication time are placed last, in registry order.
    *
    * `GET /{name}`
    *
@@ -121,8 +122,14 @@ export class PackageResource implements PromiseLike<NpmPackument> {
    * ```
    */
   async versions(signal?: AbortSignal): Promise<NpmPackageVersion[]> {
-    const packument = await this.get(signal);
-    return Object.values(packument.versions);
+    const { versions, time } = await this.get(signal);
+    // Unknown publication times sort last; the stable sort keeps their registry order.
+    const publishedAt = (version: string): number =>
+      Date.parse(time?.[version] ?? '') || Number.POSITIVE_INFINITY;
+    return Object.keys(versions)
+      .map((version) => ({ manifest: versions[version]!, at: publishedAt(version) }))
+      .sort((a, b) => (a.at === b.at ? 0 : a.at - b.at))
+      .map(({ manifest }) => manifest);
   }
 
   /**

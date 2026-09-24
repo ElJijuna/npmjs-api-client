@@ -255,6 +255,66 @@ describe('PackageResource', () => {
       expect(result.map((v) => v.version)).toEqual(['4.17.20', '4.17.21']);
     });
 
+    it('sorts versions by publication time, not by registry key order', async () => {
+      const manifest = (version: string) => ({
+        name: 'express',
+        version,
+        dist: { tarball: '', shasum: '' },
+      });
+      mockResponse({
+        name: 'express',
+        'dist-tags': { latest: '5.0.0' },
+        // A 4.x backport published after 5.0.0, listed out of order.
+        versions: {
+          '4.21.1': manifest('4.21.1'),
+          '5.0.0': manifest('5.0.0'),
+          '4.21.0': manifest('4.21.0'),
+        },
+        time: {
+          created: '2010-01-01T00:00:00.000Z',
+          '4.21.0': '2024-09-11T00:00:00.000Z',
+          '5.0.0': '2024-09-10T00:00:00.000Z',
+          '4.21.1': '2024-10-08T00:00:00.000Z',
+        },
+      });
+      const result = await npm.package('express').versions();
+      expect(result.map((v) => v.version)).toEqual(['5.0.0', '4.21.0', '4.21.1']);
+    });
+
+    it('places versions without a publication time last, in registry order', async () => {
+      const manifest = (version: string) => ({
+        name: 'pkg',
+        version,
+        dist: { tarball: '', shasum: '' },
+      });
+      mockResponse({
+        name: 'pkg',
+        'dist-tags': {},
+        versions: {
+          '3.0.0': manifest('3.0.0'),
+          '1.0.0': manifest('1.0.0'),
+          '2.0.0': manifest('2.0.0'),
+          '0.1.0': manifest('0.1.0'),
+        },
+        time: { '2.0.0': '2024-02-01T00:00:00.000Z', '1.0.0': '2024-01-01T00:00:00.000Z' },
+      });
+      const result = await npm.package('pkg').versions();
+      expect(result.map((v) => v.version)).toEqual(['1.0.0', '2.0.0', '3.0.0', '0.1.0']);
+    });
+
+    it('keeps registry order when the packument has no time map', async () => {
+      mockResponse({
+        name: 'pkg',
+        'dist-tags': {},
+        versions: {
+          '2.0.0': { name: 'pkg', version: '2.0.0', dist: { tarball: '', shasum: '' } },
+          '1.0.0': { name: 'pkg', version: '1.0.0', dist: { tarball: '', shasum: '' } },
+        },
+      });
+      const result = await npm.package('pkg').versions();
+      expect(result.map((v) => v.version)).toEqual(['2.0.0', '1.0.0']);
+    });
+
     it('returns empty array when no versions', async () => {
       mockResponse({ name: 'empty-pkg', 'dist-tags': {}, versions: {}, time: {} });
       const result = await npm.package('empty-pkg').versions();
