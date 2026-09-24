@@ -86,7 +86,9 @@ export interface NpmClientOptions {
   depsDevUrl?: string;
   /**
    * Bearer token for authenticated requests (e.g. private registry access).
-   * Sent only to the registry and downloads API — never to third-party sources.
+   * Always sent to the registry. Sent to the downloads API only when it shares
+   * the registry's origin, or when both are npm's defaults — so a private
+   * registry token never reaches `api.npmjs.org`. Never sent to third-party sources.
    */
   token?: string;
 }
@@ -130,6 +132,7 @@ export class NpmClient {
   private readonly unpkgUrl: string;
   private readonly depsDevUrl: string;
   private readonly token?: string;
+  private readonly authenticatedProviders: ReadonlySet<ApiProvider>;
   private readonly listeners: Map<keyof NpmClientEvents, NpmClientEvents[keyof NpmClientEvents][]> =
     new Map();
   private readonly baseUrls: Record<ApiProvider, string>;
@@ -160,6 +163,13 @@ export class NpmClient {
       unpkg: this.unpkgUrl,
       depsdev: this.depsDevUrl,
     };
+    this.authenticatedProviders = new Set<ApiProvider>(
+      this.token
+        ? isSameTrustDomain(this.registryUrl, this.downloadsApiUrl)
+          ? ['registry', 'downloads']
+          : ['registry']
+        : [],
+    );
     this.headersPublic = { Accept: 'application/json' };
     this.headersAuth = this.token
       ? { Accept: 'application/json', Authorization: `Bearer ${this.token}` }
@@ -244,7 +254,7 @@ export class NpmClient {
     const startedAt = new Date();
     let statusCode: number | undefined;
     let error: Error | undefined;
-    const authenticated = this.token && (provider === 'registry' || provider === 'downloads');
+    const authenticated = this.authenticatedProviders.has(provider);
     const headers =
       method === 'POST'
         ? authenticated
@@ -715,6 +725,22 @@ export class NpmClient {
    */
   async auditQuick(payload: NpmAuditPayload, signal?: AbortSignal): Promise<NpmAuditQuickResult> {
     return this.post<NpmAuditQuickResult>('/-/npm/v1/security/audits/quick', payload, signal);
+  }
+}
+
+/**
+ * Whether the registry token may be sent to the downloads API: both are npm's
+ * own services, or both are served from the same origin.
+ * @internal
+ */
+function isSameTrustDomain(registryUrl: string, downloadsApiUrl: string): boolean {
+  if (registryUrl === DEFAULT_REGISTRY_URL && downloadsApiUrl === DEFAULT_DOWNLOADS_URL) {
+    return true;
+  }
+  try {
+    return new URL(registryUrl).origin === new URL(downloadsApiUrl).origin;
+  } catch {
+    return false;
   }
 }
 

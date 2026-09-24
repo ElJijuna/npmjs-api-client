@@ -96,7 +96,8 @@ it.each([
     expect(url).toMatch(new RegExp(`^https://${hosts[index]}\\.example/base/`));
     expect(init.headers.Accept).toBe('application/json');
     expect(init.headers.Authorization).toBe(
-      authenticated && [0, 1, 6].includes(index) ? 'Bearer secret' : undefined,
+      // downloads.example is a different origin from registry.example: no token.
+      authenticated && [0, 6].includes(index) ? 'Bearer secret' : undefined,
     );
     expect(init.headers['Content-Type']).toBe(index === 6 ? 'application/json' : undefined);
   });

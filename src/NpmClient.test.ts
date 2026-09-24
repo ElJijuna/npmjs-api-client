@@ -1,5 +1,5 @@
 import { NpmClient, NpmApiError } from './index';
-import type { NpmPackument } from './index';
+import type { NpmClientOptions, NpmPackument } from './index';
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
@@ -305,6 +305,65 @@ describe('NpmClient', () => {
       await client.package('react').get();
       const headers = mockFetch.mock.calls[0][1].headers as Record<string, string>;
       expect(headers['Authorization']).toBe('Bearer my-secret-token');
+    });
+
+    async function downloadsAuthorization(options: NpmClientOptions) {
+      const client = new NpmClient({ token: 'secret', ...options });
+      mockResponse({ downloads: 1, start: '', end: '', package: 'react' });
+      await client.downloads('last-week', 'react');
+      const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      const { Authorization: authorization } = init.headers as Record<string, string>;
+      return { url, authorization };
+    }
+
+    it('does not leak a private registry token to the default downloads API', async () => {
+      const { url, authorization } = await downloadsAuthorization({
+        registryUrl: 'https://my-registry.example.com',
+      });
+      expect(url).toMatch(/^https:\/\/api\.npmjs\.org\//);
+      expect(authorization).toBeUndefined();
+    });
+
+    it('does not send the token to a downloads API on a different origin', async () => {
+      const { authorization } = await downloadsAuthorization({
+        downloadsApiUrl: 'https://downloads.example.com',
+      });
+      expect(authorization).toBeUndefined();
+    });
+
+    it('sends the token to a downloads API on the same origin as the registry', async () => {
+      const { authorization } = await downloadsAuthorization({
+        registryUrl: 'https://my-registry.example.com/npm/',
+        downloadsApiUrl: 'https://my-registry.example.com/downloads',
+      });
+      expect(authorization).toBe('Bearer secret');
+    });
+
+    it('sends the token when both URLs are npm defaults, even if set explicitly', async () => {
+      const { authorization } = await downloadsAuthorization({
+        registryUrl: 'https://registry.npmjs.org/',
+        downloadsApiUrl: 'https://api.npmjs.org',
+      });
+      expect(authorization).toBe('Bearer secret');
+    });
+
+    it('still sends the token to a private registry', async () => {
+      const client = new NpmClient({
+        token: 'secret',
+        registryUrl: 'https://my-registry.example.com',
+      });
+      mockResponse({ name: 'react', 'dist-tags': {}, versions: {}, time: {} });
+      await client.package('react').get();
+      const headers = mockFetch.mock.calls[0][1].headers as Record<string, string>;
+      expect(headers['Authorization']).toBe('Bearer secret');
+    });
+
+    it('does not send the token to the downloads API when a URL is not parseable', async () => {
+      const { authorization } = await downloadsAuthorization({
+        registryUrl: 'not a url',
+        downloadsApiUrl: 'not a url',
+      });
+      expect(authorization).toBeUndefined();
     });
   });
 

@@ -63,7 +63,7 @@ const customNpm = new NpmClient({
 });
 ```
 
-> The `token` is sent only to the registry and downloads API — never to third-party sources.
+> The `token` is always sent to the registry, and to the downloads API only when it shares the registry's origin or both are npm's defaults — a private registry token never reaches `api.npmjs.org`. It is never sent to third-party sources.
 
 ---
 
